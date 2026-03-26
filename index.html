@@ -1,226 +1,37 @@
 <!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KI Quiz Master (Hugging Face Edition)</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <style>
-        :root {
-            --primary: #2563eb;
-            --success: #22c55e;
-            --error: #ef4444;
-            --bg: #f8fafc;
-        }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: var(--bg); 
-            display: flex; 
-            justify-content: center; 
-            padding: 20px;
-            color: #1e293b;
-        }
-        .card { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 16px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
-            width: 100%; 
-            max-width: 550px; 
-        }
-        h2 { margin-top: 0; color: var(--primary); }
-        input, button { 
-            width: 100%; 
-            padding: 14px; 
-            margin-top: 10px; 
-            border-radius: 10px; 
-            border: 1px solid #e2e8f0; 
-            box-sizing: border-box; 
-            font-size: 1rem;
-        }
-        button { 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: all 0.2s;
-        }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
-        button:disabled { background: #94a3b8; cursor: not-allowed; }
-        
-        .option-btn {
-            background: white;
-            color: #334155;
-            text-align: left;
-            margin-bottom: 8px;
-            font-weight: normal;
-            border: 1px solid #e2e8f0;
-        }
-        
-        #status-msg { 
-            margin-top: 15px; 
-            padding: 12px; 
-            border-radius: 8px; 
-            font-size: 0.9rem; 
-            display: none; 
-        }
-        .info { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-        .error { background: #fef2f2; color: #b91c1c; border: 1px solid #fee2e2; }
-        
-        .hidden { display: none; }
-        .quiz-item { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9; }
-        .quiz-item p { font-weight: 600; margin-bottom: 12px; }
-    </style>
-</head>
+<html>
 <body>
+    <h2>Hugging Face Verbindungstest</h2>
+    <input type="password" id="t" placeholder="hf_...">
+    <button onclick="test()">Test Starten</button>
+    <div id="out" style="margin-top:20px; padding:10px; border:1px solid #ccc;">Noch kein Test gestartet.</div>
 
-<div class="card">
-    <div id="setup-area">
-        <h2>🤗 KI Quiz Generator</h2>
-        <p>Erstelle Quizfragen mit der Mistral-KI von Hugging Face.</p>
-        
-        <label><strong>Hugging Face Token</strong></label>
-        <input type="password" id="hfToken" placeholder="hf_...">
-        
-        <label style="display:block; margin-top:15px;"><strong>PDF Datei wählen</strong></label>
-        <input type="file" id="pdfFile" accept="application/pdf">
-        
-        <button id="startBtn" onclick="generateQuiz()">Quiz jetzt erstellen</button>
-        <div id="status-msg"></div>
-    </div>
-
-    <div id="quiz-area" class="hidden">
-        <div id="quiz-container"></div>
-        <button onclick="location.reload()" style="background:#64748b; margin-top:20px;">Anderes PDF laden</button>
-    </div>
-</div>
-
-<script>
-    // PDF.js Worker initialisieren
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-    async function generateQuiz() {
-        const token = document.getElementById('hfToken').value.trim();
-        const file = document.getElementById('pdfFile').files[0];
-        const btn = document.getElementById('startBtn');
-        const status = document.getElementById('status-msg');
-
-        if(!token || !file) return alert("Bitte Token eingeben und PDF auswählen!");
-
-        // UI vorbereiten
-        btn.disabled = true;
-        status.className = "info";
-        status.style.display = "block";
-        status.innerText = "Lese PDF Dokument...";
-
-        try {
-            // 1. Text aus PDF extrahieren (Erste 5 Seiten)
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-            let text = "";
-            const pagesToRead = Math.min(pdf.numPages, 5);
+    <script>
+        async function test() {
+            const out = document.getElementById('out');
+            const token = document.getElementById('t').value.trim();
+            out.innerText = "Verbindung wird aufgebaut...";
             
-            for (let i = 1; i <= pagesToRead; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                text += content.items.map(s => s.str).join(" ") + " ";
-            }
-
-            // 2. KI Anfrage (mit Retry-Logik für "Loading Model")
-            const modelUrl = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3";
-            let finalData = null;
-            let attempts = 0;
-
-            while (!finalData && attempts < 15) {
-                status.innerText = `KI analysiert Text... (Versuch ${attempts + 1})`;
-                
-                const response = await fetch(modelUrl, {
+            try {
+                const r = await fetch("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3", {
                     method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        inputs: `[INST] Erstelle aus diesem Text ein deutsches Quiz mit 3 Fragen. 
-                        Antworte NUR mit einem JSON-Array. Format: [{"q":"Frage?","a":["A","B","C"],"c":"A"}]
-                        Text: ${text.substring(0, 2800)} [/INST]`,
-                        parameters: { max_new_tokens: 1000, return_full_text: false }
-                    })
+                    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ inputs: "Sag Hallo!" })
                 });
-
-                const result = await response.json();
-
-                if (result.error && result.estimated_time) {
-                    // Modell lädt noch
-                    status.innerText = `KI schläft noch... wird geweckt (noch ca. ${Math.round(result.estimated_time)}s)`;
-                    await new Promise(r => setTimeout(r, 6000));
-                    attempts++;
-                } else if (result.error) {
-                    throw new Error(result.error);
+                
+                const data = await r.json();
+                if (r.ok) {
+                    out.style.color = "green";
+                    out.innerText = "ERFOLG! Die KI sagt: " + JSON.stringify(data[0].generated_text);
                 } else {
-                    // Erfolg! JSON extrahieren
-                    let aiString = result[0].generated_text;
-                    const start = aiString.indexOf('[');
-                    const end = aiString.lastIndexOf(']') + 1;
-                    finalData = JSON.parse(aiString.substring(start, end));
+                    out.style.color = "red";
+                    out.innerText = "FEHLER: " + (data.error || "Unbekannter Fehler");
                 }
+            } catch (e) {
+                out.style.color = "red";
+                out.innerText = "NETZWERK-FEHLER (Failed to fetch): Wahrscheinlich blockiert dein Browser oder Router die Verbindung zu Hugging Face.";
             }
-
-            if (!finalData) throw new Error("Zeitüberschreitung beim Laden der KI.");
-            
-            displayQuiz(finalData);
-
-        } catch (e) {
-            console.error(e);
-            status.className = "error";
-            status.innerText = "Fehler: " + e.message;
-            btn.disabled = false;
         }
-    }
-
-    function displayQuiz(data) {
-        document.getElementById('setup-area').classList.add('hidden');
-        document.getElementById('quiz-area').classList.remove('hidden');
-        const container = document.getElementById('quiz-container');
-        
-        container.innerHTML = data.map((item, idx) => `
-            <div class="quiz-item">
-                <p>${idx + 1}. ${item.q}</p>
-                ${item.a.map(opt => `
-                    <button class="option-btn" onclick="check(this, '${opt}', '${item.c}')">
-                        ${opt}
-                    </button>
-                `).join('')}
-            </div>
-        `).join('');
-    }
-
-    function check(btn, selected, correct) {
-        const parent = btn.parentElement;
-        const allBtns = parent.querySelectorAll('button');
-        
-        // Buttons deaktivieren
-        allBtns.forEach(b => b.disabled = true);
-        
-        if (selected === correct) {
-            btn.style.backgroundColor = "#dcfce7";
-            btn.style.borderColor = "#22c55e";
-            btn.innerHTML += " ✅";
-        } else {
-            btn.style.backgroundColor = "#fee2e2";
-            btn.style.borderColor = "#ef4444";
-            btn.innerHTML += " ❌";
-            
-            // Richtige Antwort markieren
-            allBtns.forEach(b => {
-                if(b.innerText.trim() === correct) {
-                    b.style.border = "2px solid #22c55e";
-                }
-            });
-        }
-    }
-</script>
-
+    </script>
 </body>
 </html>
