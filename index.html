@@ -1,146 +1,141 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PDF → Quiz App</title>
-
-  <!-- PDF.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-
-  <style>
-    body { font-family: Arial; padding: 20px; background:#f5f5f5; }
-    .card {
-      background:white;
-      padding:20px;
-      border-radius:12px;
-      box-shadow:0 4px 10px rgba(0,0,0,0.1);
-      max-width:700px;
-      margin:auto;
-    }
-    button { padding:10px 15px; margin-top:10px; cursor:pointer; }
-    .option { display:block; margin:8px 0; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quiz Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hidden { display: none; }
+    </style>
 </head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
 
-<body>
-<div class="card">
-  <h2>PDF → Multiple Choice Quiz</h2>
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">🧠 PDF Quiz Maker</h1>
+        
+        <div id="setup-section" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Gemini API Key</label>
+                <input type="password" id="api-key" class="w-full p-2 border rounded mt-1" placeholder="Dein API Key hier...">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">PDF hochladen</label>
+                <input type="file" id="pdf-upload" accept="application/pdf" class="w-full p-2 border rounded mt-1">
+            </div>
+            <button onclick="startProcessing()" id="start-btn" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Fragen generieren</button>
+        </div>
 
-  <input type="file" id="pdfInput" accept="application/pdf"/>
-  <button onclick="processPDF()">PDF analysieren</button>
+        <div id="loading" class="hidden text-center py-10">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+            <p class="mt-4 text-gray-600">KI analysiert PDF...</p>
+        </div>
 
-  <div id="quiz" style="display:none;">
-    <h3 id="question"></h3>
-    <div id="options"></div>
-    <button onclick="nextQuestion()">Nächste Frage</button>
-  </div>
-</div>
+        <div id="quiz-section" class="hidden">
+            <div id="question-container" class="space-y-4">
+                <div class="flex justify-between text-sm text-gray-500 mb-2">
+                    <span id="progress">Frage 1 von 5</span>
+                </div>
+                <h2 id="question-text" class="text-lg font-semibold text-gray-800"></h2>
+                <div id="options-container" class="grid gap-2">
+                    </div>
+            </div>
+            <div id="result-screen" class="hidden text-center">
+                <h2 class="text-2xl font-bold mb-2">Abgeschlossen!</h2>
+                <p id="score-text" class="text-lg mb-4"></p>
+                <button onclick="location.reload()" class="bg-gray-200 px-4 py-2 rounded">Neustart</button>
+            </div>
+        </div>
+    </div>
 
-<script>
-let questions = [];
-let current = 0;
+    <script type="module">
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-// 📄 PDF lesen
-async function processPDF() {
-  const file = document.getElementById('pdfInput').files[0];
-  if (!file) return alert('Bitte PDF hochladen');
+        let quizData = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
 
-  const reader = new FileReader();
+        window.startProcessing = async () => {
+            const apiKey = document.getElementById('api-key').value;
+            const fileInput = document.getElementById('pdf-upload');
+            
+            if (!apiKey || !fileInput.files[0]) {
+                alert("Bitte API Key eingeben und PDF auswählen!");
+                return;
+            }
 
-  reader.onload = async function() {
-    const typedarray = new Uint8Array(this.result);
-    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+            toggleSection('setup-section', false);
+            toggleSection('loading', true);
 
-    let text = '';
+            try {
+                const base64File = await toBase64(fileInput.files[0]);
+                const genAI = new GoogleGenerativeAI(apiKey);
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
+                const prompt = "Analysiere dieses PDF und erstelle 5 Multiple-Choice-Fragen auf Deutsch. Antworte AUSSCHLIESSLICH im JSON-Format als Array: [{'question': '...', 'options': ['A', 'B', 'C', 'D'], 'answer': index_of_correct_option}].";
 
-      content.items.forEach(item => {
-        text += item.str + ' ';
-      });
-    }
+                const result = await model.generateContent([
+                    prompt,
+                    { inlineData: { data: base64File.split(',')[1], mimeType: "application/pdf" } }
+                ]);
 
-    await generateQuestions(text);
-  };
+                const responseText = result.response.text().replace(/```json|```/g, "");
+                quizData = JSON.parse(responseText);
+                
+                showQuestion();
+                toggleSection('loading', false);
+                toggleSection('quiz-section', true);
+            } catch (error) {
+                alert("Fehler: " + error.message);
+                location.reload();
+            }
+        };
 
-  reader.readAsArrayBuffer(file);
-}
-
-// 🤖 KI Anfrage
-async function generateQuestions(text) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer YOUR_API_KEY" // ⚠️ UNSICHER!
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "Erstelle Multiple-Choice Fragen als JSON."
-        },
-        {
-          role: "user",
-          content: text.slice(0, 5000)
+        function showQuestion() {
+            const q = quizData[currentQuestionIndex];
+            document.getElementById('progress').innerText = `Frage ${currentQuestionIndex + 1} von ${quizData.length}`;
+            document.getElementById('question-text').innerText = q.question;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3 border rounded hover:bg-blue-50 transition border-gray-300";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(index);
+                container.appendChild(btn);
+            });
         }
-      ]
-    })
-  });
 
-  const data = await response.json();
+        function checkAnswer(selected) {
+            if (selected === quizData[currentQuestionIndex].answer) score++;
+            
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
 
-  try {
-    questions = JSON.parse(data.choices[0].message.content);
-    current = 0;
+        function showResults() {
+            document.getElementById('question-container').classList.add('hidden');
+            const res = document.getElementById('result-screen');
+            res.classList.remove('hidden');
+            document.getElementById('score-text').innerText = `Du hast ${score} von ${quizData.length} richtig beantwortet.`;
+        }
 
-    document.getElementById('quiz').style.display = 'block';
-    showQuestion();
+        function toggleSection(id, show) {
+            document.getElementById(id).classList.toggle('hidden', !show);
+        }
 
-  } catch (e) {
-    alert("Fehler bei KI-Antwort");
-  }
-}
-
-// ❓ Frage anzeigen
-function showQuestion() {
-  const q = questions[current];
-
-  document.getElementById('question').innerText = q.question;
-
-  const optionsDiv = document.getElementById('options');
-  optionsDiv.innerHTML = '';
-
-  q.options.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.innerText = opt;
-    btn.className = 'option';
-
-    btn.onclick = () => {
-      if (i === q.correct) alert("Richtig!");
-      else alert("Falsch!");
-    };
-
-    optionsDiv.appendChild(btn);
-  });
-}
-
-// ➡️ nächste Frage
-function nextQuestion() {
-  current++;
-
-  if (current >= questions.length) {
-    alert("Fertig!");
-    return;
-  }
-
-  showQuestion();
-}
-</script>
-
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    </script>
 </body>
 </html>
