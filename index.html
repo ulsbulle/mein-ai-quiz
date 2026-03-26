@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Gemini Quiz - Final Fix</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 40px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        input, button { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background: #4f46e5; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #9ca3af; }
+        #error-display { color: #dc2626; background: #fee2e2; padding: 10px; margin-top: 10px; border-radius: 6px; display: none; font-size: 13px; border: 1px solid #fecaca; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="card" id="main-card">
+    <h2>🧠 Quiz Generator</h2>
+    <p>Bitte gib deinen API-Key ein:</p>
+    <input type="password" id="apiKey" placeholder="AI Studio Key...">
+    <input type="file" id="pdfFile" accept="application/pdf">
+    <button id="startBtn" onclick="runQuiz()">Quiz erstellen</button>
+    <div id="error-display"></div>
+
+    <div id="quiz-area" class="hidden">
+        <hr>
+        <h3 id="question"></h3>
+        <div id="options"></div>
+    </div>
+</div>
+
+<script>
+    // PDF.js Setup
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    async function runQuiz() {
+        const key = document.getElementById('apiKey').value.trim();
+        const file = document.getElementById('pdfFile').files[0];
+        const btn = document.getElementById('startBtn');
+        const errBox = document.getElementById('error-display');
+
+        if(!key || !file) return alert("Key und PDF vergessen!");
+
+        btn.disabled = true;
+        btn.innerText = "KI arbeitet...";
+        errBox.style.display = "none";
+
+        try {
+            // 1. Text aus PDF holen
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+            let text = "";
+            for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                text += content.items.map(s => s.str).join(" ");
+            }
+
+            // 2. API Aufruf mit dem stabilsten Pfad für 2026
+            // Wir nutzen v1beta und das Modell ohne "latest" Suffix
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: "Erstelle aus folgendem Text ein Quiz mit 3 Fragen als JSON Array. Struktur: " + 
+                                  '[{"q":"Frage","a":["Opt1","Opt2","Opt3"],"c":"Richtige Opt"}]. Text: ' + text.substring(0, 5000)
+                        }]
+                    }]
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(`Google sagt: ${data.error.message} (Code: ${data.error.code})`);
+            }
+
+            // 3. Quiz anzeigen
+            let aiText = data.candidates[0].content.parts[0].text;
+            aiText = aiText.replace(/```json|```/g, "").trim();
+            const quiz = JSON.parse(aiText);
+
+            document.getElementById('quiz-area').classList.remove('hidden');
+            const q = quiz[0];
+            document.getElementById('question').innerText = q.q;
+            const optDiv = document.getElementById('options');
+            optDiv.innerHTML = "";
+            q.a.forEach(opt => {
+                const b = document.createElement('button');
+                b.innerText = opt;
+                b.style.marginBottom = "5px";
+                b.onclick = () => alert(opt === q.c ? "Richtig! ✅" : "Falsch! ❌");
+                optDiv.appendChild(b);
+            });
+
+            btn.innerText = "Erfolgreich!";
+
+        } catch (e) {
+            console.error(e);
+            errBox.innerText = e.message;
+            errBox.style.display = "block";
+            btn.disabled = false;
+            btn.innerText = "Nochmal versuchen";
+        }
+    }
+</script>
+</body>
+</html>
