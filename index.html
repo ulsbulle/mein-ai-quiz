@@ -1,35 +1,47 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <meta charset="UTF-8">
+    <title>HF Final Test</title>
+</head>
 <body>
-    <h2>Hugging Face Verbindungstest</h2>
-    <input type="password" id="t" placeholder="hf_...">
-    <button onclick="test()">Test Starten</button>
-    <div id="out" style="margin-top:20px; padding:10px; border:1px solid #ccc;">Noch kein Test gestartet.</div>
+    <h2>Letzter Versuch: Hugging Face</h2>
+    <input type="password" id="token" placeholder="hf_...">
+    <button onclick="runTest()">Testen</button>
+    <pre id="output" style="background:#eee; padding:10px; margin-top:10px; white-space: pre-wrap;"></pre>
 
     <script>
-        async function test() {
-            const out = document.getElementById('out');
-            const token = document.getElementById('t').value.trim();
-            out.innerText = "Verbindung wird aufgebaut...";
-            
+        async function runTest() {
+            const out = document.getElementById('output');
+            const token = document.getElementById('token').value.trim();
+            out.innerText = "Sende Anfrage...";
+
             try {
-                const r = await fetch("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ inputs: "Sag Hallo!" })
-                });
+                const response = await fetch(
+                    "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3",
+                    {
+                        headers: {
+                            "Authorization": `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                        },
+                        method: "POST",
+                        body: JSON.stringify({inputs: "Hallo, wer bist du?"}),
+                    }
+                );
+
+                const result = await response.json();
                 
-                const data = await r.json();
-                if (r.ok) {
+                if (response.ok) {
+                    out.innerText = "ERFOLG: " + JSON.stringify(result[0].generated_text);
                     out.style.color = "green";
-                    out.innerText = "ERFOLG! Die KI sagt: " + JSON.stringify(data[0].generated_text);
                 } else {
-                    out.style.color = "red";
-                    out.innerText = "FEHLER: " + (data.error || "Unbekannter Fehler");
+                    out.innerText = "API FEHLER: " + JSON.stringify(result);
+                    out.style.color = "orange";
                 }
-            } catch (e) {
+            } catch (error) {
+                out.innerText = "NETZWERK FEHLER: " + error.message + 
+                    "\n\nTipp: Prüfe, ob dein Token aktiv ist oder ob du ein VPN/Adblocker nutzt.";
                 out.style.color = "red";
-                out.innerText = "NETZWERK-FEHLER (Failed to fetch): Wahrscheinlich blockiert dein Browser oder Router die Verbindung zu Hugging Face.";
             }
         }
     </script>
