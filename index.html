@@ -14,4 +14,133 @@
       background:white;
       padding:20px;
       border-radius:12px;
-      box-shadow:0 4px
+      box-shadow:0 4px 10px rgba(0,0,0,0.1);
+      max-width:700px;
+      margin:auto;
+    }
+    button { padding:10px 15px; margin-top:10px; cursor:pointer; }
+    .option { display:block; margin:8px 0; }
+  </style>
+</head>
+
+<body>
+<div class="card">
+  <h2>PDF → Multiple Choice Quiz</h2>
+
+  <input type="file" id="pdfInput" accept="application/pdf"/>
+  <button onclick="processPDF()">PDF analysieren</button>
+
+  <div id="quiz" style="display:none;">
+    <h3 id="question"></h3>
+    <div id="options"></div>
+    <button onclick="nextQuestion()">Nächste Frage</button>
+  </div>
+</div>
+
+<script>
+let questions = [];
+let current = 0;
+
+// 📄 PDF lesen
+async function processPDF() {
+  const file = document.getElementById('pdfInput').files[0];
+  if (!file) return alert('Bitte PDF hochladen');
+
+  const reader = new FileReader();
+
+  reader.onload = async function() {
+    const typedarray = new Uint8Array(this.result);
+    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+
+    let text = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+
+      content.items.forEach(item => {
+        text += item.str + ' ';
+      });
+    }
+
+    await generateQuestions(text);
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+// 🤖 KI Anfrage
+async function generateQuestions(text) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer YOUR_API_KEY" // ⚠️ UNSICHER!
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "Erstelle Multiple-Choice Fragen als JSON."
+        },
+        {
+          role: "user",
+          content: text.slice(0, 5000)
+        }
+      ]
+    })
+  });
+
+  const data = await response.json();
+
+  try {
+    questions = JSON.parse(data.choices[0].message.content);
+    current = 0;
+
+    document.getElementById('quiz').style.display = 'block';
+    showQuestion();
+
+  } catch (e) {
+    alert("Fehler bei KI-Antwort");
+  }
+}
+
+// ❓ Frage anzeigen
+function showQuestion() {
+  const q = questions[current];
+
+  document.getElementById('question').innerText = q.question;
+
+  const optionsDiv = document.getElementById('options');
+  optionsDiv.innerHTML = '';
+
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.innerText = opt;
+    btn.className = 'option';
+
+    btn.onclick = () => {
+      if (i === q.correct) alert("Richtig!");
+      else alert("Falsch!");
+    };
+
+    optionsDiv.appendChild(btn);
+  });
+}
+
+// ➡️ nächste Frage
+function nextQuestion() {
+  current++;
+
+  if (current >= questions.length) {
+    alert("Fertig!");
+    return;
+  }
+
+  showQuestion();
+}
+</script>
+
+</body>
+</html>
