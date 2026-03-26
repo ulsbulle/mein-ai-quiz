@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Generator - Smart Retry Edition</title>
+    <title>AI PDF Quiz Master</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900">
@@ -11,14 +11,14 @@
     <div class="max-w-2xl mx-auto py-10 px-4">
         <div class="text-center mb-10">
             <h1 class="text-4xl font-extrabold text-blue-600 mb-2">🧠 PDF Quiz Master</h1>
-            <p class="text-slate-500 italic">Mit intelligentem Quota-Management</p>
+            <p class="text-slate-500 italic">KI-Analyse mit Auto-Modell-Erkennung</p>
         </div>
 
         <div id="setup-card" class="bg-white shadow-xl rounded-2xl p-8 mb-6 border border-slate-200">
             <div class="space-y-6">
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Gemini API Key</label>
-                    <input type="password" id="api-key" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="AIza...">
+                    <input type="password" id="api-key" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="AIza...">
                 </div>
                 
                 <div class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-400 transition cursor-pointer bg-slate-50" onclick="document.getElementById('pdf-file').click()">
@@ -34,8 +34,8 @@
         </div>
 
         <div id="status" class="hidden text-center p-10 bg-white rounded-2xl shadow-md border border-slate-100">
-            <div id="loader" class="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 mb-4"></div>
-            <p id="status-text" class="text-slate-700 font-medium mb-2">Bereite vor...</p>
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 mb-4"></div>
+            <p id="status-text" class="text-slate-700 font-medium mb-2 font-mono">Suche KI-Modell...</p>
             <p id="retry-timer" class="text-red-500 font-bold hidden"></p>
         </div>
 
@@ -43,9 +43,9 @@
             <div id="quiz-content">
                 <div class="flex justify-between items-center mb-6">
                     <span id="q-count" class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase">Frage 1 / 5</span>
-                    <span id="active-model-badge" class="text-slate-300 text-[10px] font-mono tracking-tighter"></span>
+                    <span id="active-model-badge" class="text-slate-400 text-[10px] font-mono"></span>
                 </div>
-                <h2 id="question-text" class="text-xl font-bold text-slate-800 mb-8 leading-snug"></h2>
+                <h2 id="question-text" class="text-xl font-bold text-slate-800 mb-8 leading-snug text-center"></h2>
                 <div id="options" class="space-y-3"></div>
             </div>
 
@@ -62,8 +62,6 @@
         let quizData = [];
         let currentIndex = 0;
         let score = 0;
-        let retryCount = 0;
-        const MAX_RETRIES = 2;
 
         window.onload = () => {
             const savedKey = localStorage.getItem('gemini_key');
@@ -74,9 +72,6 @@
             if(e.target.files.length > 0) document.getElementById('file-name').innerText = e.target.files[0].name;
         };
 
-        // Hilfsfunktion für Pause (Warten)
-        const delay = ms => new Promise(res => setTimeout(res, ms));
-
         async function startQuizGeneration() {
             const key = document.getElementById('api-key').value.trim();
             const file = document.getElementById('pdf-file').files[0];
@@ -86,37 +81,44 @@
             document.getElementById('setup-card').classList.add('hidden');
             document.getElementById('status').classList.remove('hidden');
             
-            processWithAI(key, file);
+            runAiFlow(key, file);
         }
 
-        async function processWithAI(key, file) {
+        async function runAiFlow(key, file) {
             const statusText = document.getElementById('status-text');
             const retryTimer = document.getElementById('retry-timer');
 
             try {
-                // 1. Modell-Check
-                statusText.innerText = "Verbindung wird geprüft...";
+                // 1. DYNAMISCHE MODELL-SUCHE (Verhindert "Nicht gefunden" Fehler)
+                statusText.innerText = "Verbindung zu Google wird geprüft...";
                 const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
                 const modelsData = await modelsRes.json();
                 
-                if(modelsData.error) throw modelsData.error;
+                if(modelsData.error) throw new Error(modelsData.error.message);
 
-                const chosenModel = "gemini-1.5-flash"; // Standard-Modell
-                document.getElementById('active-model-badge').innerText = chosenModel;
+                // Suche nach 1.5-flash oder einem Nachfolger (2.0-flash)
+                const availableModels = modelsData.models.map(m => m.name);
+                let chosenModelPath = availableModels.find(m => m.includes("gemini-1.5-flash")) || 
+                                     availableModels.find(m => m.includes("flash")) || 
+                                     availableModels.find(m => m.includes("pro"));
 
-                // 2. PDF Umwandlung
-                statusText.innerText = "PDF wird analysiert...";
+                if(!chosenModelPath) throw new Error("Kein passendes Gemini-Modell für diesen Key gefunden.");
+                
+                document.getElementById('active-model-badge').innerText = chosenModelPath.split('/').pop();
+
+                // 2. PDF KONVERTIEREN
+                statusText.innerText = "Lese Dokument...";
                 const base64Data = await toBase64(file);
                 
-                // 3. KI Anfrage
-                statusText.innerText = "KI generiert Quizfragen...";
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${chosenModel}:generateContent?key=${key}`, {
+                // 3. GENERIERUNG MIT RETRY BEI QUOTA (429)
+                statusText.innerText = "KI erstellt Fragen...";
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${chosenModelPath}:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
                             parts: [
-                                { text: "Erstelle 5 schwere Multiple-Choice-Fragen auf Deutsch zum Inhalt dieses PDFs. Antworte NUR als valides JSON-Array: [{'question':'?','options':['A','B','C','D'],'answer':0}]." },
+                                { text: "Erstelle aus dem PDF 5 Multiple-Choice-Fragen auf Deutsch. Antworte NUR als JSON-Array: [{'question':'?','options':['A','B','C','D'],'answer':0}]. Die 'answer' ist der Index der richtigen Option (0-3)." },
                                 { inlineData: { mimeType: "application/pdf", data: base64Data.split(',')[1] } }
                             ]
                         }]
@@ -124,7 +126,13 @@
                 });
 
                 const data = await response.json();
-                if(data.error) throw data.error;
+                if(data.error) {
+                    if(data.error.code === 429) {
+                        handleQuotaError(key, file);
+                        return;
+                    }
+                    throw new Error(data.error.message);
+                }
 
                 let rawText = data.candidates[0].content.parts[0].text;
                 quizData = JSON.parse(rawText.replace(/```json|```/g, "").trim());
@@ -134,27 +142,20 @@
                 showQuestion();
 
             } catch (err) {
-                console.error("Fehler-Details:", err);
-
-                // Check auf Quota Error (429)
-                if ((err.code === 429 || err.status === "RESOURCE_EXHAUSTED") && retryCount < MAX_RETRIES) {
-                    retryCount++;
-                    statusText.innerText = `Quota voll! Automatische Wiederholung (${retryCount}/${MAX_RETRIES})...`;
-                    retryTimer.classList.remove('hidden');
-                    
-                    // 30 Sekunden Countdown
-                    for (let i = 30; i > 0; i--) {
-                        retryTimer.innerText = `Nächster Versuch in ${i} Sekunden...`;
-                        await delay(1000);
-                    }
-                    
-                    retryTimer.classList.add('hidden');
-                    processWithAI(key, file); // Rekursiver Aufruf
-                } else {
-                    alert("Kritischer Fehler: " + (err.message || "Unbekannter KI-Fehler"));
-                    location.reload();
-                }
+                alert("Fehler: " + err.message);
+                location.reload();
             }
+        }
+
+        async function handleQuotaError(key, file) {
+            const retryTimer = document.getElementById('retry-timer');
+            retryTimer.classList.remove('hidden');
+            for (let i = 30; i > 0; i--) {
+                retryTimer.innerText = `Quota voll! Neuer Versuch in ${i}s...`;
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            retryTimer.classList.add('hidden');
+            runAiFlow(key, file);
         }
 
         function showQuestion() {
@@ -167,7 +168,11 @@
                 const btn = document.createElement('button');
                 btn.className = "w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-blue-500 hover:bg-blue-50 transition-all font-medium text-slate-700";
                 btn.innerText = opt;
-                btn.onclick = () => { if(i === q.answer) score++; currentIndex++; (currentIndex < quizData.length) ? showQuestion() : showResults(); };
+                btn.onclick = () => { 
+                    if(i === q.answer) score++; 
+                    currentIndex++; 
+                    (currentIndex < quizData.length) ? showQuestion() : showResults(); 
+                };
                 optContainer.appendChild(btn);
             });
         }
@@ -175,7 +180,7 @@
         function showResults() {
             document.getElementById('quiz-content').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
-            document.getElementById('score-display').innerText = `${score} von ${quizData.length} richtig!`;
+            document.getElementById('score-display').innerText = `${score} von ${quizData.length} Punkten!`;
         }
 
         const toBase64 = file => new Promise((resolve, reject) => {
