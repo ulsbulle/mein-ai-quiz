@@ -11,15 +11,15 @@
         #game-canvas { cursor: crosshair; background: #f8fafc; border-radius: 1rem; border: 2px solid #e2e8f0; }
         .history-card { animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        #pdf-preview { max-height: 200px; overflow: hidden; display: none; margin-top: 1rem; }
+        #pdf-preview { max-height: 180px; overflow: hidden; display: none; margin-top: 1rem; border-radius: 0.75rem; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900 pb-20">
 
     <div class="max-w-2xl mx-auto py-10 px-4">
         <div class="text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-blue-600 mb-2">🧠 AI Quiz Master Pro 1.5</h1>
-            <p class="text-slate-500 italic">PDF analysieren & spielerisch lernen</p>
+            <h1 class="text-4xl font-extrabold text-blue-600 mb-2">🧠 AI Quiz Master Pro 1.6 🧠</h1>
+            <p class="text-slate-500 italic">Automatischer Modell-Check & PDF-Analyse</p>
         </div>
 
         <div id="setup-card" class="bg-white shadow-xl rounded-2xl p-8 mb-6 border border-slate-200">
@@ -42,8 +42,8 @@
                     </div>
                 </div>
 
-                <div id="pdf-preview" class="border rounded-lg p-2 bg-slate-100 flex justify-center">
-                    <canvas id="pdf-canvas" class="shadow-sm border border-white"></canvas>
+                <div id="pdf-preview" class="border bg-slate-100 flex justify-center">
+                    <canvas id="pdf-canvas"></canvas>
                 </div>
 
                 <button onclick="startQuizGeneration()" id="gen-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg">
@@ -54,7 +54,7 @@
 
         <div id="status" class="hidden text-center p-10 bg-white rounded-2xl shadow-md border border-slate-100">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 mb-4"></div>
-            <p id="status-text" class="text-slate-700 font-medium mb-2">Verbindung wird aufgebaut...</p>
+            <p id="status-text" class="text-slate-700 font-medium mb-2">Prüfe API & Modelle...</p>
             <p id="retry-timer" class="text-red-600 font-bold hidden animate-pulse"></p>
         </div>
 
@@ -65,10 +65,12 @@
             <div id="quiz-content">
                 <div class="flex justify-between items-center mb-6">
                     <span id="q-count" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase"></span>
+                    <span id="model-badge" class="text-[9px] text-slate-400 font-mono"></span>
                 </div>
                 <h2 id="question-text" class="text-xl font-bold text-slate-800 mb-8 leading-snug"></h2>
                 <div id="options" class="space-y-3"></div>
             </div>
+
             <div id="game-screen" class="hidden text-center py-4">
                 <h2 class="text-2xl font-bold text-blue-600 mb-2">Spielpause! 🎮</h2>
                 <div class="relative inline-block">
@@ -76,6 +78,7 @@
                     <div id="game-score" class="absolute top-2 right-4 font-bold text-blue-500 text-xl font-mono">0/10</div>
                 </div>
             </div>
+
             <div id="result-screen" class="hidden text-center py-6">
                 <div class="text-5xl mb-4 text-green-500">🏆</div>
                 <h2 class="text-3xl font-bold text-slate-800">Ergebnis</h2>
@@ -89,9 +92,9 @@
         </div>
 
         <div id="history-container" class="mt-12">
-            <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">📊 Historie</h3>
+            <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">📊 Verlauf</h3>
             <div id="history-list" class="space-y-2"></div>
-            <button onclick="clearHistory()" class="mt-4 text-[10px] text-red-400 hover:text-red-600 underline uppercase">Löschen</button>
+            <button onclick="clearHistory()" class="mt-4 text-[10px] text-red-400 hover:text-red-600 underline">VERLAUF LÖSCHEN</button>
         </div>
     </div>
 
@@ -115,7 +118,7 @@
                 const pdf = await pdfjsLib.getDocument(typedarray).promise;
                 const page = await pdf.getPage(1);
                 const canvas = document.getElementById('pdf-canvas');
-                const viewport = page.getViewport({scale: 0.5});
+                const viewport = page.getViewport({scale: 0.4});
                 canvas.height = viewport.height; canvas.width = viewport.width;
                 await page.render({canvasContext: canvas.getContext('2d'), viewport: viewport}).promise;
                 document.getElementById('pdf-preview').style.display = 'flex';
@@ -127,7 +130,8 @@
             const key = document.getElementById('api-key').value.trim();
             const file = document.getElementById('pdf-file').files[0];
             const count = document.getElementById('question-count').value;
-            if(!key || !file) return alert("API Key und PDF Datei erforderlich!");
+            if(!key || !file) return alert("API Key und PDF nötig!");
+            
             localStorage.setItem('gemini_key', key);
             document.getElementById('setup-card').classList.add('hidden');
             document.getElementById('status').classList.remove('hidden');
@@ -139,19 +143,34 @@
             const retryTimer = document.getElementById('retry-timer');
             
             try {
-                statusText.innerText = "PDF wird verarbeitet...";
+                // SCHRITT 1: Verfügbare Modelle abfragen (Löst das "Not Found" Problem)
+                statusText.innerText = "Suche kompatibles Modell...";
+                const modelRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                const modelData = await modelRes.json();
+                
+                if (modelData.error) throw new Error(modelData.error.message);
+
+                // Finde ein passendes Flash-Modell aus der Liste der verfügbaren Modelle
+                const model = modelData.models.find(m => m.name.includes("gemini-1.5-flash") && m.supportedGenerationMethods.includes("generateContent")) 
+                             || modelData.models.find(m => m.name.includes("flash"))
+                             || modelData.models[0];
+
+                const modelName = model.name;
+                document.getElementById('model-badge').innerText = modelName.split('/').pop();
+
+                // SCHRITT 2: PDF zu Base64
+                statusText.innerText = "PDF wird eingelesen...";
                 const base64Data = await toBase64(file);
                 
-                // Wir nutzen hier die v1beta URL, die am breitesten unterstützt wird
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-
-                const response = await fetch(apiUrl, {
+                // SCHRITT 3: Generierung
+                statusText.innerText = `Generiere ${count} Fragen mit ${modelName.split('/').pop()}...`;
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
                             parts: [
-                                { text: `Erstelle aus dem PDF exakt ${count} Multiple-Choice-Fragen auf Deutsch. Antworte NUR als JSON-Array: [{"question":"Text","options":["A","B","C","D"],"answer":0}]. Kein Text davor oder danach!` },
+                                { text: `Analysiere das PDF und erstelle exakt ${count} MC-Fragen auf Deutsch. Antworte NUR als JSON-Array: [{"question":"Text","options":["A","B","C","D"],"answer":0}]. Kein Markdown!` },
                                 { inlineData: { mimeType: "application/pdf", data: base64Data.split(',')[1] } }
                             ]
                         }]
@@ -161,21 +180,13 @@
                 const data = await response.json();
                 
                 if (data.error) {
-                    // Falls v1beta auch scheitert (sehr selten), versuchen wir v1
-                    if (data.error.message.includes("not found") && !apiUrl.includes("/v1/")) {
-                         // Interner Fallback-Versuch
-                         console.log("Fallback auf v1...");
-                         const v1Url = apiUrl.replace("v1beta", "v1");
-                         // Hier rufen wir die Funktion rekursiv mit der neuen URL auf (vereinfacht)
-                    }
-
                     if ((data.error.code === 429 || data.error.status === "RESOURCE_EXHAUSTED") && retryCount < 2) {
                         let sec = 35;
                         retryTimer.classList.remove('hidden');
                         const t = setInterval(() => {
                             sec--;
-                            statusText.innerText = "Quota erreicht. Bitte warten...";
-                            retryTimer.innerText = `Retry in ${sec}s (Versuch ${retryCount+1}/2)`;
+                            statusText.innerText = "Quota Limit. Warte kurz...";
+                            retryTimer.innerText = `Neuer Versuch in ${sec}s`;
                             if(sec <= 0) { clearInterval(t); retryTimer.classList.add('hidden'); runAiFlow(key, file, count, retryCount + 1); }
                         }, 1000);
                         return;
@@ -192,7 +203,7 @@
                 document.getElementById('quiz-container').classList.remove('hidden');
                 showQuestion();
             } catch (err) {
-                alert("Fehler: " + err.message + "\nVersuche es eventuell mit einem kürzeren PDF.");
+                alert("Kritischer Fehler: " + err.message);
                 location.reload();
             }
         }
@@ -238,9 +249,9 @@
         function showRes() {
             document.getElementById('quiz-content').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
-            document.getElementById('score-display').innerText = `${score} von ${quizData.length} richtig!`;
+            document.getElementById('score-display').innerText = `${score} von ${quizData.length} Punkten!`;
             if(userMistakes.length > 0) {
-                document.getElementById('mistake-analysis').innerHTML = `<p class="text-left font-bold text-red-600 mb-2 text-sm uppercase">Korrektur:</p>` + 
+                document.getElementById('mistake-analysis').innerHTML = `<p class="text-left font-bold text-red-600 mb-2 text-xs uppercase">Korrektur:</p>` + 
                 userMistakes.map(m => `<div class="text-left bg-red-50 p-3 rounded-lg mb-2 text-xs border border-red-100"><p class="font-bold text-slate-800">${m.q}</p><p class="text-red-500">❌ ${m.g}</p><p class="text-green-600">✅ ${m.c}</p></div>`).join('');
             }
             const h = JSON.parse(localStorage.getItem('quiz_history') || '[]');
@@ -250,17 +261,17 @@
 
         function renderHistory() {
             const h = JSON.parse(localStorage.getItem('quiz_history') || '[]');
-            document.getElementById('history-list').innerHTML = h.map(e => `<div class="history-card bg-white p-3 rounded-lg border flex justify-between items-center text-sm shadow-sm"><span class="text-slate-400 text-[10px]">${e.d}</span><span class="font-bold">${e.p}% (${e.s}/${e.t})</span></div>`).join('') || '<p class="text-center text-slate-400 text-xs">Keine Daten.</p>';
+            document.getElementById('history-list').innerHTML = h.map(e => `<div class="history-card bg-white p-3 rounded-lg border flex justify-between items-center text-sm shadow-sm"><span class="text-slate-400 text-[10px]">${e.d}</span><span class="font-bold">${e.p}%</span></div>`).join('') || '<p class="text-center text-slate-400 text-xs italic">Noch kein Verlauf.</p>';
         }
 
         function exportCSV() {
             let csv = "\uFEFFFrage;Option A;Option B;Option C;Option D;Antwort\n";
             quizData.forEach(q => { csv += `"${q.question}";${q.options.map(o => `"${o}"`).join(';')};"${q.options[q.answer]}"\n`; });
             const b = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = "Quiz.csv"; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = "Quiz_Export.csv"; a.click();
         }
 
-        function clearHistory() { localStorage.removeItem('quiz_history'); renderHistory(); }
+        function clearHistory() { if(confirm("Löschen?")) { localStorage.removeItem('quiz_history'); renderHistory(); } }
         const toBase64 = f => new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); r.onerror = rej; });
     </script>
 </body>
