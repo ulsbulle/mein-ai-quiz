@@ -3,27 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Master Pro</title>
+    <title>AI Quiz Master Pro 1.7</title>
+	<!-- Tailwind CSS: Wird via CDN geladen, um das moderne, responsive Design (Karten-Layout, Blau-Grau-Farbschema) ohne separate CSS-Datei zu gestalten.-->
     <script src="https://cdn.tailwindcss.com"></script>
+	<!-- PDF.js: Eine mächtige Bibliothek von Mozilla, die verwendet wird, um das hochgeladene PDF im Browser zu lesen und eine visuelle Vorschau der ersten Seite zu rendern.-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
         #progress-bar { transition: width 0.4s ease-in-out; }
         #game-canvas { cursor: crosshair; background: #f8fafc; border-radius: 1rem; border: 2px solid #e2e8f0; }
         .history-card { animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        #pdf-preview { max-height: 180px; overflow: hidden; display: none; margin-top: 1rem; border-radius: 0.75rem; }
+		#pdf-preview_title { max-height: 180px; overflow: hidden; display: none; margin-top: 1rem; border-radius: 0.75rem; } /* Erstmal ausgeblendet Überschrift PDF-Preview*/
+		#pdf-preview { max-height: 180px; overflow: hidden; display: none; margin-top: 1rem; border-radius: 0.75rem; } /* Erstmal ausgeblendet PDF-Preview*/
+
+
+		
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900 pb-20">
 
-    <div class="max-w-2xl mx-auto py-10 px-4">
-        <div class="text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-blue-600 mb-2">🧠 AI Quiz Master Pro 1.6 🧠</h1>
-            <p class="text-slate-500 italic">Automatischer Modell-Check & PDF-Analyse</p>
-        </div>
+		<div class="max-w-2xl mx-auto py-10 px-4">
+		<div class="sticky top-0 z-10 bg-slate-50 text-center mb-10">
+			<h1 class="sticky top-0 z-10 bg-slate-50 text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">
+			  🧠 AI Quiz Master Pro 1.7 🧠
+			</h1>
+			<p class="text-slate-500 italic">
+			  PDF analysieren & spielerisch lernen ©ZOLL-Rentner
+			</p>
+		</div>
 
         <div id="setup-card" class="bg-white shadow-xl rounded-2xl p-8 mb-6 border border-slate-200">
             <div class="space-y-6">
+			    <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1"><u><b>Kurzanleitung zur Nutzung:</b></u></label>
+					<ol class="list-decimal list-outside ml-6 space-y-1 text-slate-600">
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-800">API Key:</span> 
+                    Gib deinen Gemini Key ein.
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-800">Konfiguration:</span> 
+                    Wähle die gewünschte Anzahl an Fragen (z. B. 10).
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-800">PDF hochladen:</span> 
+                    Wähle z.B. dein Lernskript aus.
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-800">Lernen & Spielen:</span> 
+                    Beantworte die Fragen. In der Mitte erscheint das Blasen-Spiel als kleine Pause.
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-800">Auswertung:</span> 
+                    Schau dir deine Fehler an und lade bei Bedarf die CSV für Anki oder Excel herunter.
+                </li>
+            </ol>
+
+
+                </div>
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Gemini API Key</label>
                     <input type="password" id="api-key" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="AIza...">
@@ -42,7 +79,9 @@
                     </div>
                 </div>
 
-                <div id="pdf-preview" class="border bg-slate-100 flex justify-center">
+					<label id="pdf-preview_title" class="block text-sm font-semibold text-slate-700 mb-1"><u>PDF Vorschau:</u></label>
+				<div id="pdf-preview" class="border bg-slate-100 flex justify-center">
+					
                     <canvas id="pdf-canvas"></canvas>
                 </div>
 
@@ -121,7 +160,8 @@
                 const viewport = page.getViewport({scale: 0.4});
                 canvas.height = viewport.height; canvas.width = viewport.width;
                 await page.render({canvasContext: canvas.getContext('2d'), viewport: viewport}).promise;
-                document.getElementById('pdf-preview').style.display = 'flex';
+                document.getElementById('pdf-preview_title').style.display = 'flex';
+				document.getElementById('pdf-preview').style.display = 'flex';
             };
             reader.readAsArrayBuffer(file);
         };
