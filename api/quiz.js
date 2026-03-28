@@ -6,10 +6,11 @@ export default async function handler(req, res) {
         const { pdfBase64, questionCount } = req.body;
         const apiKey = process.env.GEMINI_API_KEY;
 
-        if (!apiKey) throw new Error("API Key fehlt in Vercel Environment Variables!");
+        if (!apiKey) throw new Error("API Key fehlt!");
 
-        // KORREKTUR: Der Modellpfad wird direkt in die URL eingebaut, v1beta bleibt
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // FIX: Wir nutzen die stabilere v1 Version für das Flash-Modell
+        // Falls v1beta nötig ist, stellen wir sicher, dass das Modell-Präfix stimmt
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -17,16 +18,12 @@ export default async function handler(req, res) {
             body: JSON.stringify({
                 contents: [{
                     parts: [
-                        // Wichtig: Erst die Daten (PDF), dann die Anweisung (Text)
                         { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
-                        { text: `Erstelle exakt ${questionCount} Multiple-Choice-Fragen basierend auf diesem Dokument auf Deutsch. 
-                                 Format: JSON-Array. Jedes Objekt muss 'question', 'options' (Array mit 4 Strings) 
-                                 und 'answer' (Index 0-3) enthalten.` }
+                        { text: `Erstelle ${questionCount} Multiple-Choice-Fragen auf Deutsch basierend auf diesem PDF. Antwort NUR als JSON-Array: [{"question":"Frage","options":["A","B","C","D"],"answer":0}]` }
                     ]
                 }],
-                generationConfig: { 
-                    responseMimeType: "application/json",
-                    temperature: 0.7 
+                generationConfig: {
+                    responseMimeType: "application/json"
                 }
             })
         });
@@ -40,15 +37,10 @@ export default async function handler(req, res) {
             });
         }
 
-        // Gemini liefert bei JSON-Mode manchmal das Array direkt oder in einem Text-Feld
-        let resultText = data.candidates[0].content.parts[0].text;
-        
-        // Sicherheitshalber parsen, falls Gemini Markdown-Backticks ```json nutzt
-        const cleanJson = resultText.replace(/```json|```/g, "").trim();
-        res.status(200).json(JSON.parse(cleanJson));
+        const resultText = data.candidates[0].content.parts[0].text;
+        res.status(200).json(JSON.parse(resultText));
 
     } catch (error) {
-        console.error("Backend Error:", error);
         res.status(500).json({ error: error.message });
     }
 }
