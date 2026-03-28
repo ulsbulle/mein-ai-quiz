@@ -1,7 +1,7 @@
 {
-  "name": "ai-quiz-master-vercel",
+  "name": "ai-quiz-master",
   "version": "1.0.0",
   "dependencies": {
-    "@google/generative-ai": "^0.1.0"
+    "@google/generative-ai": "^0.11.0"
   }
 }
