@@ -1,6 +1,7 @@
 {
   "name": "zoll-rentner-lernapp",
   "version": "1.0.0",
+  "type": "module",
   "engines": {
     "node": "20.x"
   },
