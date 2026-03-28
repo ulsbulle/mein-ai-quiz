@@ -1,15 +1,20 @@
-// Region Fix US-East-1
-export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Method not allowed');
+// Erzwungener Umzug der Funktion in die USA (us-east-1)
+export const config = {
+  runtime: 'edge',
+  regions: ['iad1'], // Das ist Washington D.C.
+};
+
+export default async function handler(req) {
+    if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
     try {
-        const { pdfBase64, questionCount } = req.body;
+        const { pdfBase64, questionCount } = await req.json();
         const apiKey = process.env.GEMINI_API_KEY;
 
         if (!apiKey) throw new Error("API Key fehlt!");
 
-        // FIX: In v1beta über REST muss das Modell oft so angesprochen werden:
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+        // Wir nutzen die stabilste URL für Flash
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -18,12 +23,10 @@ export default async function handler(req, res) {
                 contents: [{
                     parts: [
                         { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
-                        { text: `Erstelle exakt ${questionCount} Multiple-Choice-Fragen auf Deutsch basierend auf diesem PDF. 
-                                 Antwort NUR als JSON-Array: [{"question":"Frage","options":["A","B","C","D"],"answer":0}]` }
+                        { text: `Erstelle exakt ${questionCount} Multiple-Choice-Fragen auf Deutsch basierend auf diesem PDF. Antwort NUR als JSON-Array: [{"question":"Frage","options":["A","B","C","D"],"answer":0}]` }
                     ]
                 }],
                 generationConfig: {
-                    // WICHTIG: Unterstriche für die REST-API (v1beta)
                     response_mime_type: "application/json"
                 }
             })
@@ -32,20 +35,24 @@ export default async function handler(req, res) {
         const data = await response.json();
 
         if (!response.ok) {
-            return res.status(response.status).json({ 
+            return new Response(JSON.stringify({ 
                 error: data.error?.message || "Google API Fehler",
                 details: data.error 
-            });
+            }), { status: response.status, headers: { 'Content-Type': 'application/json' } });
         }
 
         const resultText = data.candidates[0].content.parts[0].text;
-        
-        // Sicherheitshalber parsen, falls Gemini Markdown-Backticks nutzt
         const cleanJson = resultText.replace(/```json|```/g, "").trim();
-        res.status(200).json(JSON.parse(cleanJson));
+        
+        return new Response(cleanJson, {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
 
     } catch (error) {
-        console.error("Backend Error:", error);
-        res.status(500).json({ error: error.message });
+        return new Response(JSON.stringify({ error: error.message }), { 
+            status: 500, 
+            headers: { 'Content-Type': 'application/json' } 
+        });
     }
 }
