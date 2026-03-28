@@ -1,7 +1,10 @@
 {
   "name": "zoll-rentner-lernapp",
   "version": "1.0.0",
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
-    "@vercel/node": "latest"
+    "node-fetch": "^3.3.0"
   }
 }
