@@ -1,0 +1,13 @@
+# Abhängigkeiten (werden von Vercel selbst installiert)
+node_modules/
+
+# Lokale Umgebungsvariablen (DEIN API-KEY!)
+.env
+.env.local
+
+# Betriebssystem-Dateien
+.DS_Store
+Thumbs.db
+
+# Vercel spezifische Ordner
+.vercel
