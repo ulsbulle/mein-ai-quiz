@@ -12,15 +12,16 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
-// --- DER AUTOMATISCHE SELBSTTEST BEIM START ---
+// --- AUTOMATISCHER VERBINDUNGSTEST ---
 async function checkGoogleConnection() {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-        console.error("❌ FEHLER: GEMINI_API_KEY fehlt in den Variablen!");
+        console.error("❌ FEHLER: GEMINI_API_KEY ist nicht in Railway gesetzt!");
         return;
     }
 
     try {
+        // Wir nutzen hier die v1beta mit dem Standard-Modellnamen
         const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         const response = await fetch(testUrl, {
             method: 'POST',
@@ -30,20 +31,24 @@ async function checkGoogleConnection() {
         
         const data = await response.json();
         if (response.ok) {
-            console.log("✅ GOOGLE API CHECK: Verbindung erfolgreich! Key ist gültig.");
+            console.log("✅ GOOGLE API CHECK: Verbindung steht! Modell gemini-1.5-flash ist bereit.");
         } else {
-            console.error("❌ GOOGLE API CHECK FEHLGESCHLAGEN:", data.error?.message || "Unbekannter Fehler");
+            console.error("❌ GOOGLE API CHECK FEHLGESCHLAGEN:", JSON.stringify(data.error || data));
         }
     } catch (err) {
-        console.error("❌ NETZWERK-FEHLER beim Google-Check:", err.message);
+        console.error("❌ NETZWERK-FEHLER beim Check:", err.message);
     }
 }
 
-// API Endpunkt
+// API ENDPUNKT FÜR DAS QUIZ
 app.post('/api/quiz', async (req, res) => {
     try {
         const { pdfBase64, questionCount } = req.body;
         const apiKey = process.env.GEMINI_API_KEY;
+
+        if (!pdfBase64) {
+            return res.status(400).json({ error: "Kein PDF-Inhalt empfangen." });
+        }
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
@@ -54,7 +59,9 @@ app.post('/api/quiz', async (req, res) => {
                 contents: [{
                     parts: [
                         { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
-                        { text: `Erstelle exakt ${questionCount} Multiple-Choice-Fragen auf Deutsch. JSON-Format: [{"question":"Frage","options":["A","B","C","D"],"answer":0}]` }
+                        { text: `Erstelle exakt ${questionCount} Multiple-Choice-Fragen auf Deutsch basierend auf diesem Dokument. 
+                                 Antworte AUSSCHLIESSLICH als JSON-Array in diesem Format: 
+                                 [{"question":"Frage","options":["A","B","C","D"],"answer":0}]` }
                     ]
                 }],
                 safetySettings: [
@@ -63,7 +70,10 @@ app.post('/api/quiz', async (req, res) => {
                     { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
                     { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
                 ],
-                generationConfig: { response_mime_type: "application/json" }
+                generationConfig: { 
+                    response_mime_type: "application/json",
+                    temperature: 0.7 
+                }
             })
         });
 
@@ -71,20 +81,27 @@ app.post('/api/quiz', async (req, res) => {
 
         if (!data.candidates || data.candidates.length === 0) {
             console.error("Google verweigert Antwort:", JSON.stringify(data));
-            return res.status(500).json({ error: "Google liefert keine Daten. Safety-Filter oder Region-Lock?", details: data });
+            return res.status(500).json({ 
+                error: "Google liefert keine Daten. Prüfe die Railway-Logs für Details.",
+                details: data 
+            });
         }
 
-        const resultText = data.candidates[0].content.parts[0].text;
-        res.json(JSON.parse(resultText.replace(/```json|```/g, "").trim()));
+        let resultText = data.candidates[0].content.parts[0].text;
+        
+        // Bereinigung falls Google Markdown-Codeblöcke mitsendet
+        resultText = resultText.replace(/```json|```/g, "").trim();
+        
+        res.status(200).json(JSON.parse(resultText));
 
     } catch (error) {
-        console.error("API Error:", error.message);
-        res.status(500).json({ error: error.message });
+        console.error("KRITISCHER FEHLER:", error.message);
+        res.status(500).json({ error: "Server-Fehler: " + error.message });
     }
 });
 
-// Server Starten & Test ausführen
+// START
 app.listen(PORT, '0.0.0.0', async () => {
-    console.log(`🚀 Server aktiv auf Port ${PORT}`);
-    await checkGoogleConnection(); // Hier wird der Test getriggert
+    console.log(`🚀 Server gestartet auf Port ${PORT}`);
+    await checkGoogleConnection();
 });
