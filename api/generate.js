@@ -6,17 +6,19 @@ export default async function handler(req, res) {
     try {
         const { pdfBase64, questionCount } = req.body;
         
-        // Initialisierung
+        // 1. Initialisierung mit dem Key aus deinen Vercel-Umgebungsvariablen
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         
-        // WICHTIG: API_VERSION explizit auf v1beta setzen
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash"
-        }, { apiVersion: 'v1beta' }); // <--- Diese Zeile löst den 404 Fehler
+        // 2. Wir nutzen einfach "gemini-1.5-flash". 
+        // Es ist das stabilste Modell für PDF-Analysen.
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const prompt = `Analysiere das PDF und erstelle exakt ${questionCount} MC-Fragen auf Deutsch. 
-        Antworte NUR als JSON-Array: [{"question":"Text","options":["A","B","C","D"],"answer":0}]. Kein Markdown!`;
+        const prompt = `Analysiere das PDF und erstelle exakt ${questionCount} Multiple-Choice-Fragen auf Deutsch.
+        Antworte NUR als valides JSON-Array im Format: 
+        [{"question":"Text","options":["A","B","C","D"],"answer":0}]
+        Kein Markdown, keine Einleitung!`;
 
+        // 3. Generierung starten
         const result = await model.generateContent([
             {
                 inlineData: {
@@ -28,14 +30,16 @@ export default async function handler(req, res) {
         ]);
 
         const response = await result.response;
-        const text = response.text();
+        let text = response.text();
         
-        // JSON-Säuberung (falls die KI Markdown-Backticks ```json mitschickt)
-        const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
+        // Sicherheits-Check: Falls die KI Markdown-Code-Blöcke (```json) mitschickt, entfernen wir sie
+        text = text.replace(/```json/g, "").replace(/```/g, "").trim();
         
-        res.status(200).json(JSON.parse(cleanJson));
+        // 4. Das fertige Objekt zurück an dein Frontend schicken
+        res.status(200).json(JSON.parse(text));
+        
     } catch (error) {
-        console.error("Gemini API Error:", error);
-        res.status(500).json({ error: "Fehler bei der Quiz-Generierung: " + error.message });
+        console.error("Fehler im Backend:", error);
+        res.status(500).json({ error: "KI-Service aktuell nicht erreichbar. Bitte erneut versuchen." });
     }
 }
