@@ -23,9 +23,7 @@ export default async function handler(req, res) {
                         { text: `Erstelle exakt ${questionCount} Multiple-Choice-Fragen auf Deutsch basierend auf diesem PDF. Antwort NUR als JSON-Array: [{"question":"Frage","options":["A","B","C","D"],"answer":0}]` }
                     ]
                 }],
-                generationConfig: { 
-                    response_mime_type: "application/json" 
-                }
+                generationConfig: { }
             })
         });
 
