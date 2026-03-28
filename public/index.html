@@ -1,1 +1,282 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quiz Master Pro 2.0</title>
+	<!-- Tailwind CSS: Wird via CDN geladen, um das moderne, responsive Design (Karten-Layout, Blau-Grau-Farbschema) ohne separate CSS-Datei zu gestalten.-->
+    <script src="https://cdn.tailwindcss.com"></script>
+	<!-- PDF.js: Eine mächtige Bibliothek von Mozilla, die verwendet wird, um das hochgeladene PDF im Browser zu lesen und eine visuelle Vorschau der ersten Seite zu rendern.-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <style>
+        #progress-bar { transition: width 0.4s ease-in-out; }
+        #game-canvas { cursor: crosshair; background: #f8fafc; border-radius: 1rem; border: 2px solid #e2e8f0; }
+        .history-card { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+		#pdf-preview_title { max-height: 180px; overflow: hidden; display: none; margin-top: 1rem; border-radius: 0.75rem; } /* Erstmal ausgeblendet Überschrift PDF-Preview*/
+		#pdf-preview { max-height: 180px; overflow: hidden; display: none; margin-top: 1rem; border-radius: 0.75rem; } /* Erstmal ausgeblendet PDF-Preview*/
 
+
+		
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-900 pb-20">
+
+		<div class="max-w-2xl mx-auto py-10 px-4">
+		<div class="sticky top-0 z-10 bg-slate-50 text-center mb-10">
+			<h1 class="sticky top-0 z-10 bg-slate-50 text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">
+			  🧠 AI Quiz Master Pro 2.0 🧠
+			</h1>
+			<p class="text-slate-500 italic">
+			  PDF analysieren & spielerisch lernen ©ZOLL-Rentner
+			</p>
+		</div>
+
+        <div id="setup-card" class="bg-white shadow-xl rounded-2xl p-8 mb-6 border border-slate-200">
+            <div class="space-y-6">
+			    <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1"><u><b>Kurzanleitung zur Nutzung:</b></u></label>
+					<ol class="list-decimal list-outside ml-6 space-y-1 text-slate-600">
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-800">API Key:</span> 
+                    Gib deinen Gemini <a href="https://ai.google.dev/gemini-api/docs/api-key?hl=de" target="_blank" class="text-blue-600 hover:underline">Key</a> ein.
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-800">Konfiguration:</span> 
+                    Wähle die gewünschte Anzahl an Fragen (z. B. 10).
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-800">PDF hochladen:</span> 
+                    Wähle z.B. dein Lernskript aus.
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-800">Lernen & Spielen:</span> 
+                    Beantworte die Fragen. In der Mitte erscheint das Blasen-Spiel als kleine Pause.
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-800">Auswertung:</span> 
+                    Schau dir deine Fehler an und lade bei Bedarf die CSV für Anki oder Excel herunter.
+                </li>
+            </ol>
+
+
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Fragenanzahl</label>
+                        <input type="number" id="question-count" min="1" max="20" value="5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="flex flex-col justify-end">
+                        <div class="border-2 border-dashed border-slate-200 rounded-lg p-2 text-center hover:border-blue-400 transition cursor-pointer bg-slate-50" onclick="document.getElementById('pdf-file').click()">
+                            <input type="file" id="pdf-file" accept="application/pdf" class="hidden">
+                            <span class="text-xs text-slate-600 font-medium" id="file-name">PDF auswählen</span>
+                        </div>
+                    </div>
+                </div>
+
+					<label id="pdf-preview_title" class="block text-sm font-semibold text-slate-700 mb-1"><u>PDF Vorschau:</u></label>
+				<div id="pdf-preview" class="border bg-slate-100 flex justify-center">
+					
+                    <canvas id="pdf-canvas"></canvas>
+                </div>
+
+                <button onclick="startQuizGeneration()" id="gen-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg">
+                    Quiz generieren
+                </button>
+            </div>
+        </div>
+
+        <div id="status" class="hidden text-center p-10 bg-white rounded-2xl shadow-md border border-slate-100">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 mb-4"></div>
+            <p id="status-text" class="text-slate-700 font-medium mb-2">Prüfe API & Modelle...</p>
+            <p id="retry-timer" class="text-red-600 font-bold hidden animate-pulse"></p>
+        </div>
+
+        <div id="quiz-container" class="hidden bg-white shadow-2xl rounded-2xl p-8 border border-slate-200 overflow-hidden">
+            <div class="w-full bg-slate-100 rounded-full h-2 mb-6">
+                <div id="progress-bar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+            </div>
+            <div id="quiz-content">
+                <div class="flex justify-between items-center mb-6">
+                    <span id="q-count" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase"></span>
+                    <span id="model-badge" class="text-[9px] text-slate-400 font-mono"></span>
+                </div>
+                <h2 id="question-text" class="text-xl font-bold text-slate-800 mb-8 leading-snug"></h2>
+                <div id="options" class="space-y-3"></div>
+            </div>
+
+            <div id="game-screen" class="hidden text-center py-4">
+                <h2 class="text-2xl font-bold text-blue-600 mb-2">Spielpause! 🎮</h2>
+                <div class="relative inline-block">
+                    <canvas id="game-canvas" width="300" height="300"></canvas>
+                    <div id="game-score" class="absolute top-2 right-4 font-bold text-blue-500 text-xl font-mono">0/10</div>
+                </div>
+            </div>
+
+            <div id="result-screen" class="hidden text-center py-6">
+                <div class="text-5xl mb-4 text-green-500">🏆</div>
+                <h2 class="text-3xl font-bold text-slate-800">Ergebnis</h2>
+                <p id="score-display" class="text-xl text-slate-600 mt-2 mb-6"></p>
+                <div id="mistake-analysis" class="mb-8 max-h-60 overflow-y-auto pr-2"></div>
+                <div class="grid grid-cols-1 gap-3">
+                    <button onclick="exportCSV()" class="bg-white border-2 border-slate-200 text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 font-medium">📥 CSV Export</button>
+                    <button onclick="location.reload()" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md">Neustart</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="history-container" class="mt-12">
+            <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">📊 Verlauf</h3>
+            <div id="history-list" class="space-y-2"></div>
+            <button onclick="clearHistory()" class="mt-4 text-[10px] text-red-400 hover:text-red-600 underline">VERLAUF LÖSCHEN</button>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        let quizData = [], currentIndex = 0, score = 0, gamePoints = 0, gameActive = false, userMistakes = [];
+
+        window.onload = () => {
+            const savedKey = localStorage.getItem('gemini_key');
+            if(savedKey) document.getElementById('api-key').value = savedKey;
+            renderHistory();
+        };
+
+        document.getElementById('pdf-file').onchange = async (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            document.getElementById('file-name').innerText = file.name;
+            const reader = new FileReader();
+            reader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                const page = await pdf.getPage(1);
+                const canvas = document.getElementById('pdf-canvas');
+                const viewport = page.getViewport({scale: 0.4});
+                canvas.height = viewport.height; canvas.width = viewport.width;
+                await page.render({canvasContext: canvas.getContext('2d'), viewport: viewport}).promise;
+                document.getElementById('pdf-preview_title').style.display = 'flex';
+				document.getElementById('pdf-preview').style.display = 'flex';
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        async function startQuizGeneration() {
+            const key = document.getElementById('api-key').value.trim();
+            const file = document.getElementById('pdf-file').files[0];
+            const count = document.getElementById('question-count').value;
+            if(!key || !file) return alert("API Key und PDF nötig!");
+            
+            localStorage.setItem('gemini_key', key);
+            document.getElementById('setup-card').classList.add('hidden');
+            document.getElementById('status').classList.remove('hidden');
+            runAiFlow(key, file, count);
+        }
+
+        async function runAiFlow(file, count) {
+    const statusText = document.getElementById('status-text');
+    
+    try {
+        // Schritt 1: PDF lokal in Base64 umwandeln
+        statusText.innerText = "PDF wird vorbereitet...";
+        const base64WithHeader = await toBase64(file);
+        const base64Data = base64WithHeader.split(',')[1]; 
+
+        statusText.innerText = "KI generiert Fragen (via Vercel)...";
+        
+        // Schritt 2: Anfrage an DEINEN Vercel-Endpunkt statt an Google
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                pdfBase64: base64Data,
+                questionCount: count
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Server-Fehler");
+        }
+
+        // Schritt 3: Ergebnis verarbeiten
+        quizData = await response.json();
+
+        document.getElementById('status').classList.add('hidden');
+        document.getElementById('quiz-container').classList.remove('hidden');
+        showQuestion();
+    } catch (err) {
+        alert("Fehler: " + err.message);
+        location.reload();
+    }
+}
+
+        function showQuestion() {
+            const triggerIdx = Math.floor(quizData.length / 2);
+            if (currentIndex === triggerIdx && gamePoints < 10 && quizData.length > 2) { startMiniGame(); return; }
+            const q = quizData[currentIndex];
+            document.getElementById('progress-bar').style.width = `${(currentIndex / quizData.length) * 100}%`;
+            document.getElementById('q-count').innerText = `Frage ${currentIndex + 1} von ${quizData.length}`;
+            document.getElementById('question-text').innerText = q.question;
+            const optDiv = document.getElementById('options'); optDiv.innerHTML = '';
+            q.options.forEach((opt, i) => {
+                const b = document.createElement('button');
+                b.className = "w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-blue-500 hover:bg-blue-50 transition-all font-medium text-slate-700";
+                b.innerText = opt;
+                b.onclick = () => { 
+                    if(i === q.answer) score++; else userMistakes.push({q: q.question, g: opt, c: q.options[q.answer]});
+                    currentIndex++; (currentIndex < quizData.length) ? showQuestion() : showRes(); 
+                };
+                optDiv.appendChild(b);
+            });
+        }
+
+        function startMiniGame() {
+            document.getElementById('quiz-content').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            gameActive = true;
+            const canvas = document.getElementById('game-canvas'); const ctx = canvas.getContext('2d');
+            let b = { x: 150, y: 150, r: 25 };
+            canvas.onclick = (e) => {
+                const r = canvas.getBoundingClientRect();
+                if(Math.sqrt((e.clientX-r.left-b.x)**2 + (e.clientY-r.top-b.y)**2) < b.r) {
+                    gamePoints++; document.getElementById('game-score').innerText = `${gamePoints}/10`;
+                    b.x = Math.random()*250+25; b.y = Math.random()*250+25;
+                    if(gamePoints >= 10) { gameActive = false; document.getElementById('game-screen').classList.add('hidden'); document.getElementById('quiz-content').classList.remove('hidden'); showQuestion(); }
+                }
+            };
+            function draw() { if(!gameActive) return; ctx.clearRect(0,0,300,300); ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fillStyle = '#3b82f6'; ctx.fill(); requestAnimationFrame(draw); }
+            draw();
+        }
+
+        function showRes() {
+            document.getElementById('quiz-content').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('score-display').innerText = `${score} von ${quizData.length} Punkten!`;
+            if(userMistakes.length > 0) {
+                document.getElementById('mistake-analysis').innerHTML = `<p class="text-left font-bold text-red-600 mb-2 text-xs uppercase">Korrektur:</p>` + 
+                userMistakes.map(m => `<div class="text-left bg-red-50 p-3 rounded-lg mb-2 text-xs border border-red-100"><p class="font-bold text-slate-800">${m.q}</p><p class="text-red-500">❌ ${m.g}</p><p class="text-green-600">✅ ${m.c}</p></div>`).join('');
+            }
+            const h = JSON.parse(localStorage.getItem('quiz_history') || '[]');
+            h.unshift({d: new Date().toLocaleDateString(), s: score, t: quizData.length, p: Math.round(score/quizData.length*100)});
+            localStorage.setItem('quiz_history', JSON.stringify(h.slice(0,10))); renderHistory();
+        }
+
+        function renderHistory() {
+            const h = JSON.parse(localStorage.getItem('quiz_history') || '[]');
+            document.getElementById('history-list').innerHTML = h.map(e => `<div class="history-card bg-white p-3 rounded-lg border flex justify-between items-center text-sm shadow-sm"><span class="text-slate-400 text-[10px]">${e.d}</span><span class="font-bold">${e.p}%</span></div>`).join('') || '<p class="text-center text-slate-400 text-xs italic">Noch kein Verlauf.</p>';
+        }
+
+        function exportCSV() {
+            let csv = "\uFEFFFrage;Option A;Option B;Option C;Option D;Antwort\n";
+            quizData.forEach(q => { csv += `"${q.question}";${q.options.map(o => `"${o}"`).join(';')};"${q.options[q.answer]}"\n`; });
+            const b = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = "Quiz_Export.csv"; a.click();
+        }
+
+        function clearHistory() { if(confirm("Löschen?")) { localStorage.removeItem('quiz_history'); renderHistory(); } }
+        const toBase64 = f => new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); r.onerror = rej; });
+    </script>
+</body>
+</html>
