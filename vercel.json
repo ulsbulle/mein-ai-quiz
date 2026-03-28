@@ -1,4 +1,13 @@
 {
   "version": 2,
-  "cleanUrls": true
+  "functions": {
+    "api/quiz.js": {
+      "runtime": "vercel-node@latest",
+      "regions": ["iad1"]
+    }
+  },
+  "rewrites": [
+    { "source": "/api/quiz", "destination": "/api/quiz.js" },
+    { "source": "/(.*)", "destination": "/public/$1" }
+  ]
 }
