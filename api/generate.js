@@ -5,8 +5,8 @@ export default async function handler(req, res) {
         const { pdfBase64, questionCount } = req.body;
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // VERSUCH 1: Der absolut stabilste Endpunkt (v1)
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // Wir nutzen v1beta, weil NUR diese Version PDF-Uploads via API stabil unterstützt
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -14,29 +14,28 @@ export default async function handler(req, res) {
             body: JSON.stringify({
                 contents: [{
                     parts: [
-                        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
-                        { text: `Erstelle exakt ${questionCount} MC-Fragen zum PDF auf Deutsch. Antwort NUR als JSON-Array: [{"question":"T","options":["A","B","C","D"],"answer":0}]` }
+                        { text: `Erstelle exakt ${questionCount} Multiple-Choice-Fragen auf Deutsch basierend auf diesem PDF. Antwort NUR als JSON-Array: [{"question":"Text","options":["A","B","C","D"],"answer":0}]` },
+                        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } }
                     ]
-                }]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
             })
         });
 
         const data = await response.json();
 
-        // Falls v1 nicht geht, werfen wir den Fehler aus und sehen im Log nach
         if (!response.ok) {
-            console.error("GOOGLE_RESPONSE_ERROR:", JSON.stringify(data));
-            throw new Error(data.error?.message || "Modell-Zugriff verweigert.");
+            // Wenn es hier wieder 404 sagt, liegt es definitiv an der Region oder dem Key-Status
+            throw new Error(data.error?.message || "Google API Fehler");
         }
 
-        let resultText = data.candidates[0].content.parts[0].text;
-        // Säuberung falls doch Markdown kommt
-        resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-        
+        const resultText = data.candidates[0].content.parts[0].text;
         res.status(200).json(JSON.parse(resultText));
 
     } catch (error) {
-        console.error("BACKEND_CRASH:", error.message);
-        res.status(500).json({ error: "Kritischer Fehler: " + error.message });
+        console.error("DEBUG:", error.message);
+        res.status(500).json({ error: error.message });
     }
 }
