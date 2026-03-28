@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Master Pro 2.0</title>
+    <title>AI Quiz Master Pro 2.1</title>
 	<!-- Tailwind CSS: Wird via CDN geladen, um das moderne, responsive Design (Karten-Layout, Blau-Grau-Farbschema) ohne separate CSS-Datei zu gestalten.-->
     <script src="https://cdn.tailwindcss.com"></script>
 	<!-- PDF.js: Eine mächtige Bibliothek von Mozilla, die verwendet wird, um das hochgeladene PDF im Browser zu lesen und eine visuelle Vorschau der ersten Seite zu rendern.-->
@@ -25,7 +25,7 @@
 		<div class="max-w-2xl mx-auto py-10 px-4">
 		<div class="sticky top-0 z-10 bg-slate-50 text-center mb-10">
 			<h1 class="sticky top-0 z-10 bg-slate-50 text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">
-			  🧠 AI Quiz Master Pro 2.0 🧠
+			  🧠 AI Quiz Master Pro 2.1 🧠
 			</h1>
 			<p class="text-slate-500 italic">
 			  PDF analysieren & spielerisch lernen ©ZOLL-Rentner
@@ -81,9 +81,9 @@
                     <canvas id="pdf-canvas"></canvas>
                 </div>
 
-                <button onclick="startQuizGeneration()" id="gen-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg">
-                    Quiz generieren
-                </button>
+                <button onclick="startQuizGeneration()" id="gen-btn" class="w-full bg-blue-600 ...">
+				Quiz generieren
+				</button>
             </div>
         </div>
 
@@ -138,8 +138,7 @@
         let quizData = [], currentIndex = 0, score = 0, gamePoints = 0, gameActive = false, userMistakes = [];
 
         window.onload = () => {
-            const savedKey = localStorage.getItem('gemini_key');
-            if(savedKey) document.getElementById('api-key').value = savedKey;
+            // Wir brauche keinen Key mehr laden, nur noch den Verlauf anzeigen
             renderHistory();
         };
 
@@ -163,16 +162,18 @@
         };
 
         async function startQuizGeneration() {
-            const key = document.getElementById('api-key').value.trim();
+            //const key = document.getElementById('api-key').value.trim();
             const file = document.getElementById('pdf-file').files[0];
             const count = document.getElementById('question-count').value;
             if(!key || !file) return alert("API Key und PDF nötig!");
             
-            localStorage.setItem('gemini_key', key);
-            document.getElementById('setup-card').classList.add('hidden');
-            document.getElementById('status').classList.remove('hidden');
-            runAiFlow(key, file, count);
-        }
+			// UI auf "Laden" umstellen
+			document.getElementById('setup-card').classList.add('hidden');
+			document.getElementById('status').classList.remove('hidden');
+			
+			// Ab zum Vercel-Backend
+			runAiFlow(file, count);
+		}
 
         async function runAiFlow(file, count) {
     const statusText = document.getElementById('status-text');
