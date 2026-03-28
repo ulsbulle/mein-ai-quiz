@@ -1,12 +1,7 @@
 {
   "name": "zoll-rentner-lernapp",
   "version": "1.0.0",
-  "description": "KI-gestützter Quiz-Generator mit Gemini 1.5",
-  "main": "api/quiz.js", 
   "dependencies": {
-    "@google/generative-ai": "^0.21.0"
-  },
-  "engines": {
-    "node": "20.x"
+    "@vercel/node": "latest"
   }
 }
