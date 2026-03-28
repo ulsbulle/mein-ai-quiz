@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
         if (!apiKey) throw new Error("API Key fehlt in Vercel Environment Variables!");
 
-        // Wir nutzen v1beta für volle PDF-Unterstützung
+        // KORREKTUR: Der Modellpfad wird direkt in die URL eingebaut, v1beta bleibt
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
@@ -16,28 +16,38 @@ export default async function handler(req, res) {
             body: JSON.stringify({
                 contents: [{
                     parts: [
-                        { text: `Erstelle ${questionCount} MC-Fragen zum PDF auf Deutsch. Antwort NUR als JSON-Array: [{"question":"Frage","options":["A","B","C","D"],"answer":0}]` },
-                        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } }
+                        // Wichtig: Erst die Daten (PDF), dann die Anweisung (Text)
+                        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+                        { text: `Erstelle exakt ${questionCount} Multiple-Choice-Fragen basierend auf diesem Dokument auf Deutsch. 
+                                 Format: JSON-Array. Jedes Objekt muss 'question', 'options' (Array mit 4 Strings) 
+                                 und 'answer' (Index 0-3) enthalten.` }
                     ]
                 }],
-                generationConfig: { responseMimeType: "application/json" }
+                generationConfig: { 
+                    responseMimeType: "application/json",
+                    temperature: 0.7 
+                }
             })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            // Wir schicken die echte Fehlermeldung von Google an den Browser!
             return res.status(response.status).json({ 
                 error: data.error?.message || "Google API Fehler",
                 details: data.error 
             });
         }
 
-        const resultText = data.candidates[0].content.parts[0].text;
-        res.status(200).json(JSON.parse(resultText));
+        // Gemini liefert bei JSON-Mode manchmal das Array direkt oder in einem Text-Feld
+        let resultText = data.candidates[0].content.parts[0].text;
+        
+        // Sicherheitshalber parsen, falls Gemini Markdown-Backticks ```json nutzt
+        const cleanJson = resultText.replace(/```json|```/g, "").trim();
+        res.status(200).json(JSON.parse(cleanJson));
 
     } catch (error) {
+        console.error("Backend Error:", error);
         res.status(500).json({ error: error.message });
     }
 }
