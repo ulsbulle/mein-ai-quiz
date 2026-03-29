@@ -3,14 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Master Pro 2.6</title>
+    <title>AI Quiz Master Pro 2.6.1</title>
     <link rel="icon" href="https://fav.farm/🧠" />
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
         #progress-bar { transition: width 0.4s ease-in-out; }
-        #game-canvas { cursor: crosshair; background: radial-gradient(circle, #ffffff 0%, #f1f5f9 100%); border-radius: 1.5rem; border: 4px solid #e2e8f0; touch-action: none; }
+        /* Cursor auf Standard-Pfeil für maximale Sichtbarkeit */
+        #game-canvas { 
+            cursor: default; 
+            background: radial-gradient(circle, #ffffff 0%, #f1f5f9 100%); 
+            border-radius: 1.5rem; 
+            border: 4px solid #e2e8f0; 
+            touch-action: none; 
+        }
         .animate-slideIn { animation: slideIn 0.4s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .option-btn:disabled { opacity: 0.8; cursor: not-allowed; }
@@ -20,9 +27,9 @@
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900 pb-20">
 
     <div class="max-w-2xl mx-auto py-10 px-4">
-        <div class="text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-blue-600 mb-2">🧠 AI Quiz Master 2.6</h1>
-            <p class="text-slate-500 italic">Lernen mit System, Sound & Spielspaß ©ZOLL-Rentner</p>
+        <div class="sticky top-0 z-10 bg-slate-50 text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">🧠 AI Quiz Master 2.6.1 🧠</h1>
+            <p class="text-slate-500 italic">Lernen mit System, Sound & Fokus ©ZOLL-Rentner</p>
         </div>
 
         <div id="setup-card" class="bg-white shadow-xl rounded-2xl p-8 mb-6 border border-slate-200">
@@ -30,10 +37,10 @@
                 <div class="bg-slate-50 p-5 rounded-xl border border-slate-100">
                     <label class="block text-base font-bold text-slate-700 mb-3 underline">Kurzanleitung:</label>
                     <ul class="text-sm md:text-base text-slate-600 space-y-2 list-disc ml-5 leading-relaxed">
-                        <li>Wähle <b>PDF</b> für KI-Analyse oder <b>CSV</b> für schnellen Import.</li>
+                        <li>Wähle <b>PDF</b> für KI-Analyse oder <b>CSV</b> für Import.</li>
                         <li>Nutze <b>Drag & Drop</b> zum Hochladen der Dateien.</li>
-                        <li>Nach der halben Fragenanzahl wartet eine <b>Spielpause</b> auf dich!</li>
-                        <li>Lerne durch direktes Feedback & Sound nach jeder Antwort.</li>
+                        <li>In der Spielpause hilft dir ein <b>Leuchtkreis</b> beim Zielen.</li>
+                        <li>Lerne durch direktes Feedback & Sound-Effekte.</li>
                     </ul>
                 </div>
 
@@ -92,7 +99,7 @@
 
             <div id="game-screen" class="hidden text-center py-4 animate-slideIn">
                 <h2 class="text-2xl font-bold text-blue-600 mb-2">Spielpause! 🎮</h2>
-                <p class="text-slate-500 mb-6 text-sm">Sammle 10 Punkte zum Weitermachen:</p>
+                <p class="text-slate-500 mb-6 text-sm font-medium italic">Sammle 10 Punkte zum Weitermachen:</p>
                 <div id="game-selection" class="grid grid-cols-2 gap-3 mb-6">
                     <button onclick="setupGame('clicker')" class="p-4 border-2 border-slate-100 rounded-2xl hover:border-blue-400 bg-white shadow-sm transition-all">🎯 Clicker</button>
                     <button onclick="setupGame('catcher')" class="p-4 border-2 border-slate-100 rounded-2xl hover:border-emerald-400 bg-white shadow-sm transition-all">🍎 Fänger</button>
@@ -169,7 +176,7 @@
             if(target) target.classList.remove('hidden');
         }
 
-        // --- PDF & CSV Logik ---
+        // --- Dateihandling ---
         document.getElementById('Modus').onchange = function() {
             document.getElementById('section-pdf').classList.toggle('hidden', this.value !== 'PDF');
             document.getElementById('section-csv').classList.toggle('hidden', this.value !== 'CSV');
@@ -215,7 +222,7 @@
                 });
                 quizData = await res.json();
                 toggleCard('quiz-container'); showQuestion();
-            } catch (err) { alert("Fehler beim Generieren!"); location.reload(); }
+            } catch (err) { alert("Fehler!"); location.reload(); }
         }
 
         function importCSV(source) {
@@ -243,7 +250,6 @@
             document.getElementById('quiz-content').classList.remove('hidden');
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.add('hidden');
-
             const q = quizData[currentIndex];
             document.getElementById('feedback-area').classList.add('hidden');
             document.getElementById('progress-bar').style.width = `${(currentIndex/quizData.length)*100}%`;
@@ -267,7 +273,7 @@
                         playSound('wrong'); userMistakes.push({q: q.question, g: opt, c: q.options[q.answer]});
                         b.classList.add('border-red-500', 'bg-red-50');
                         document.querySelectorAll('.option-btn')[q.answer].classList.add('border-green-400', 'bg-green-50');
-                        txt.innerHTML = `❌ Falsch. Richtig ist:<br><span class="text-slate-700">${q.options[q.answer]}</span>`;
+                        txt.innerHTML = `❌ Falsch. Richtig ist:<br><span class="text-slate-700 font-medium">${q.options[q.answer]}</span>`;
                         txt.className = "text-red-600 font-bold";
                         area.className = "mt-8 p-6 rounded-2xl border-2 border-red-100 bg-red-50 animate-slideIn";
                     }
@@ -297,32 +303,54 @@
             document.getElementById('active-game-area').classList.remove('hidden');
             const canvas = document.getElementById('game-canvas'), ctx = canvas.getContext('2d');
             let particles = [], enemies = [], obj = { x: 150, y: 150, r: 25, vX: 2, vY: 2, angle: 0 };
+            
+            // Maus-Tracking
+            canvas.onpointermove = (e) => {
+                const r = canvas.getBoundingClientRect();
+                obj.x = e.clientX - r.left; obj.y = e.clientY - r.top;
+            };
+
             function createExplosion(x, y, color) { for(let i=0; i<8; i++) particles.push({x, y, vX: (Math.random()-0.5)*10, vY: (Math.random()-0.5)*10, life: 1, color}); }
 
             canvas.onpointerdown = (e) => {
                 const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
-                const d = Math.sqrt((mx - obj.x)**2 + (my - obj.y)**2);
-                if (currentGame === 'clicker' && d < obj.r + 15) { createExplosion(obj.x, obj.y, '#fbbf24'); playSound('point'); updateScore(1); obj.x = Math.random()*240+30; obj.y = Math.random()*240+30; }
-                if (currentGame === 'grower' && d < obj.r) { obj.r += 12; if(obj.r > 75) { createExplosion(obj.x, obj.y, '#3b82f6'); playSound('point'); updateScore(1); obj.r = 25; obj.x = Math.random()*200+50; } }
+                // Clicker-Logik
+                if (currentGame === 'clicker') {
+                    const d = Math.sqrt((mx - targetX)**2 + (my - targetY)**2);
+                    if(d < 35) { createExplosion(targetX, targetY, '#fbbf24'); playSound('point'); updateScore(1); targetX = Math.random()*240+30; targetY = Math.random()*240+30; }
+                }
+                // Grower-Logik
+                if (currentGame === 'grower') {
+                    const d = Math.sqrt((mx - targetX)**2 + (my - targetY)**2);
+                    if(d < targetR) { targetR += 12; if(targetR > 75) { createExplosion(targetX, targetY, '#3b82f6'); playSound('point'); updateScore(1); targetR = 25; targetX = Math.random()*200+50; targetY = Math.random()*200+50; } }
+                }
             };
+
+            let targetX = 150, targetY = 150, targetR = 25;
 
             gameInterval = setInterval(() => {
                 if(!gameActive) return;
                 ctx.clearRect(0,0,300,300);
-                particles.forEach((p, i) => { p.x += p.vX; p.y += p.vY; p.life -= 0.05; if(p.life <= 0) particles.splice(i, 1); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill(); });
-                ctx.globalAlpha = 1; ctx.font = "40px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
-                if (currentGame === 'clicker') { obj.angle += 0.05; ctx.save(); ctx.translate(obj.x, obj.y); ctx.rotate(obj.angle); ctx.fillText("⭐", 0, 0); ctx.restore(); }
+                // Partikel
+                particles.forEach((p, i) => { p.x += p.vX; p.y += p.vY; p.life -= 0.05; if(p.life <= 0) particles.splice(i, 1); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill(); });
+                ctx.globalAlpha = 1;
+
+                // NEU: Visueller Fokus-Halo für die Maus (Sichtbarkeit)
+                ctx.beginPath(); ctx.arc(obj.x, obj.y, 15, 0, Math.PI*2);
+                ctx.fillStyle = "rgba(59, 130, 246, 0.15)"; ctx.fill();
+
+                ctx.font = "40px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+
+                if (currentGame === 'clicker') {
+                    ctx.fillText("⭐", targetX, targetY);
+                }
                 else if (currentGame === 'catcher') {
-                    obj.y += 5; if(obj.y > 320) { obj.y = -20; obj.x = Math.random()*260+20; }
-                    ctx.fillText("🍎", obj.x, obj.y);
-                    canvas.onpointermove = (e) => {
-                        const r = canvas.getBoundingClientRect();
-                        if(Math.abs((e.clientX-r.left)-obj.x) < 35 && Math.abs((e.clientY-r.top)-obj.y) < 35) { createExplosion(obj.x, obj.y, '#ef4444'); playSound('point'); updateScore(1); obj.y = -50; obj.x = Math.random()*260+20; }
-                    };
+                    targetY += 5; if(targetY > 320) { targetY = -20; targetX = Math.random()*260+20; }
+                    ctx.fillText("🍎", targetX, targetY);
+                    if(Math.abs(obj.x - targetX) < 35 && Math.abs(obj.y - targetY) < 35) { createExplosion(targetX, targetY, '#ef4444'); playSound('point'); updateScore(1); targetY = -50; targetX = Math.random()*260+20; }
                 }
                 else if (currentGame === 'dodger') {
-                    canvas.onpointermove = (e) => { const r = canvas.getBoundingClientRect(); obj.x = e.clientX - r.left; obj.y = e.clientY - r.top; };
                     ctx.fillText("🛸", obj.x, obj.y);
                     if(Math.random() < 0.05) enemies.push({x: Math.random()*300, y: -20, vY: Math.random()*3+2});
                     enemies.forEach((en, i) => {
@@ -332,7 +360,10 @@
                     });
                     updateScore(0.03);
                 }
-                else if (currentGame === 'grower') { ctx.fillText("🫧", obj.x, obj.y); ctx.beginPath(); ctx.arc(obj.x, obj.y, obj.r, 0, Math.PI*2); ctx.strokeStyle = "#60a5fa"; ctx.lineWidth = 3; ctx.stroke(); }
+                else if (currentGame === 'grower') { 
+                    ctx.fillText("🫧", targetX, targetY); 
+                    ctx.beginPath(); ctx.arc(targetX, targetY, targetR, 0, Math.PI*2); ctx.strokeStyle = "#60a5fa"; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); 
+                }
             }, 1000/60);
         }
 
@@ -341,7 +372,7 @@
             if (gamePoints >= 10) { gameActive = false; clearInterval(gameInterval); setTimeout(() => showQuestion(), 600); }
         }
 
-        // --- Finish ---
+        // --- Auswertung ---
         function showRes() {
             document.getElementById('quiz-content').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
