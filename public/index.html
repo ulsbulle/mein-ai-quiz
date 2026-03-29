@@ -3,116 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Master Pro 2.0</title>
-	<!-- Tailwind CSS: Wird via CDN geladen, um das moderne, responsive Design (Karten-Layout, Blau-Grau-Farbschema) ohne separate CSS-Datei zu gestalten.-->
+    <title>AI Quiz Master Pro 2.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
-	<!-- PDF.js: Eine mächtige Bibliothek von Mozilla, die verwendet wird, um das hochgeladene PDF im Browser zu lesen und eine visuelle Vorschau der ersten Seite zu rendern.-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
         #progress-bar { transition: width 0.4s ease-in-out; }
         #game-canvas { cursor: crosshair; background: #f8fafc; border-radius: 1rem; border: 2px solid #e2e8f0; }
         .history-card { animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-		#pdf-preview_title { max-height: 180px; overflow: hidden; display: none; margin-top: 1rem; border-radius: 0.75rem; } /* Erstmal ausgeblendet Überschrift PDF-Preview*/
-		#pdf-preview { max-height: 180px; overflow: hidden; display: none; margin-top: 1rem; border-radius: 0.75rem; } /* Erstmal ausgeblendet PDF-Preview*/
-
-
-		
+        #pdf-preview_title, #pdf-preview { display: none; }
+        .option-btn:disabled { cursor: not-allowed; }
+        .animate-slideIn { animation: slideIn 0.4s ease-out; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900 pb-20">
 
-		<div class="max-w-2xl mx-auto py-10 px-4">
-		<div class="sticky top-0 z-10 bg-slate-50 text-center mb-10">
-			<h1 class="sticky top-0 z-10 bg-slate-50 text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">
-			  🧠 AI Quiz Master Pro 2.0 🧠
-			</h1>
-			<p class="text-slate-500 italic">
-			  PDF analysieren & spielerisch lernen ©ZOLL-Rentner
-			</p>
-		</div>
+    <div class="max-w-2xl mx-auto py-10 px-4">
+        <div class="sticky top-0 z-10 bg-slate-50 text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">
+              🧠 AI Quiz Master Pro 2.1 🧠
+            </h1>
+            <p class="text-slate-500 italic">PDF analysieren & spielerisch lernen ©ZOLL-Rentner</p>
+        </div>
 
         <div id="setup-card" class="bg-white shadow-xl rounded-2xl p-8 mb-6 border border-slate-200">
             <div class="space-y-6">
-			    <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1"><u><b>Kurzanleitung zur Nutzung:</b></u></label>
-					<ol class="list-decimal list-outside ml-6 space-y-1 text-slate-600">
-                <li class="pl-2">
-                    <span class="font-semibold text-slate-800">Konfiguration:</span> 
-                    Wähle die gewünschte Anzahl an Fragen (z. B. 10).
-                </li>
-                <li class="pl-2">
-                    <span class="font-semibold text-slate-800">PDF hochladen:</span> 
-                    Wähle z.B. dein Lernskript aus.
-                </li>
-                <li class="pl-2">
-                    <span class="font-semibold text-slate-800">Lernen & Spielen:</span> 
-                    Beantworte die Fragen. In der Mitte erscheint das Blasen-Spiel als kleine Pause.
-                </li>
-                <li class="pl-2">
-                    <span class="font-semibold text-slate-800">Auswertung:</span> 
-                    Schau dir deine Fehler an und lade bei Bedarf die CSV für Anki oder Excel herunter.
-                </li>
-            </ol>
-
-
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1"><u><b>Kurzanleitung:</b></u></label>
+                    <ol class="list-decimal list-outside ml-6 text-sm text-slate-600 space-y-1">
+                        <li>Wähle den Modus (PDF-Generierung oder CSV-Import).</li>
+                        <li>Lade deine Datei via Drag & Drop oder Klick hoch.</li>
+                        <li>Beantworte die Fragen mit direktem Feedback.</li>
+                    </ol>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1">Fragenanzahl</label>
-                        <input type="number" id="question-count" min="1" max="20" value="5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
-                    <div class="flex flex-col justify-end">
-                        <div class="border-2 border-dashed border-slate-200 rounded-lg p-2 text-center hover:border-blue-400 transition cursor-pointer bg-slate-50" onclick="document.getElementById('pdf-file').click()">
+                <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <label for="Modus" class="block text-sm font-bold text-blue-800 mb-2">Interaktions-Modus wählen:</label>
+                    <select id="Modus" class="w-full p-3 rounded-lg border-2 border-blue-200 focus:border-blue-500 outline-none font-medium bg-white">
+                        <option value="PDF">📄 Aus PDF generieren (KI-Analyse)</option>
+                        <option value="CSV">📂 Vorhandene CSV laden (Import)</option>
+                    </select>
+                </div>
+
+                <div id="section-pdf" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Fragenanzahl</label>
+                            <input type="number" id="question-count" min="1" max="20" value="5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center hover:border-blue-400 transition-all cursor-pointer bg-slate-50"
+                             onclick="document.getElementById('pdf-file').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
                             <input type="file" id="pdf-file" accept="application/pdf" class="hidden">
-                            <span class="text-xs text-slate-600 font-medium" id="file-name">PDF auswählen</span>
+                            <span class="text-xs text-slate-600 font-medium" id="file-name">PDF hierher ziehen oder klicken</span>
                         </div>
                     </div>
+                    <label id="pdf-preview_title" class="block text-sm font-semibold text-slate-700 mb-1"><u>PDF Vorschau:</u></label>
+                    <div id="pdf-preview" class="border bg-slate-100 flex justify-center rounded-xl overflow-hidden">
+                        <canvas id="pdf-canvas"></canvas>
+                    </div>
+                    <button onclick="startQuizGeneration()" id="gen-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                        <span>🚀 Quiz jetzt generieren</span>
+                    </button>
                 </div>
 
-					<label id="pdf-preview_title" class="block text-sm font-semibold text-slate-700 mb-1"><u>PDF Vorschau:</u></label>
-				<div id="pdf-preview" class="border bg-slate-100 flex justify-center">
-					
-                    <canvas id="pdf-canvas"></canvas>
+                <div id="section-csv" class="hidden animate-slideIn">
+                    <div id="drop-zone-csv" class="bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-2xl p-8 text-center transition-all cursor-pointer"
+                         onclick="document.getElementById('csv-import').click()" ondragover="handleDragOverCSV(event)" ondragleave="handleDragLeaveCSV(event)" ondrop="handleDropCSV(event)">
+                        <div class="text-4xl mb-3">📊</div>
+                        <h3 class="text-emerald-800 font-bold mb-2">CSV Quiz-Import</h3>
+                        <p class="text-emerald-600 text-sm mb-6">Datei hierher ziehen oder klicken</p>
+                        <input type="file" id="csv-import" accept=".csv" class="hidden" onchange="importCSV(this)">
+                        <span class="bg-emerald-600 text-white py-2 px-6 rounded-xl font-bold">Datei auswählen</span>
+                    </div>
                 </div>
-
-				<button onclick="document.getElementById('csv-import').click()" class="w-full mt-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 rounded-xl transition-all flex items-center justify-center gap-2 border border-slate-300">
-    <span>📂 Vorhandenes Quiz (CSV) laden</span>
-    <input type="file" id="csv-import" accept=".csv" class="hidden" onchange="importCSV(this)">
-				</button>
-
-				<button onclick="startQuizGeneration()" id="gen-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
-					<span>🚀 Quiz jetzt generieren</span>
-				</button>
             </div>
         </div>
 
         <div id="status" class="hidden text-center p-10 bg-white rounded-2xl shadow-md border border-slate-100">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 mb-4"></div>
-            <p id="status-text" class="text-slate-700 font-medium mb-2">Prüfe API & Modelle...</p>
-            <p id="retry-timer" class="text-red-600 font-bold hidden animate-pulse"></p>
+            <p id="status-text" class="text-slate-700 font-medium">Verarbeite Daten...</p>
         </div>
 
-        <div id="quiz-container" class="hidden bg-white shadow-2xl rounded-2xl p-8 border border-slate-200 overflow-hidden">
+        <div id="quiz-container" class="hidden bg-white shadow-2xl rounded-2xl p-8 border border-slate-200">
             <div class="w-full bg-slate-100 rounded-full h-2 mb-6">
                 <div id="progress-bar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
             </div>
             <div id="quiz-content">
                 <div class="flex justify-between items-center mb-6">
                     <span id="q-count" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase"></span>
-                    <span id="model-badge" class="text-[9px] text-slate-400 font-mono"></span>
                 </div>
                 <h2 id="question-text" class="text-xl font-bold text-slate-800 mb-8 leading-snug"></h2>
                 <div id="options" class="space-y-3"></div>
+                
+                <div id="feedback-area" class="hidden mt-6 p-4 rounded-xl border-2 animate-slideIn">
+                    <p id="feedback-text" class="font-bold mb-4"></p>
+                    <button id="next-q-btn" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 transition shadow-md">
+                        Nächste Frage →
+                    </button>
+                </div>
             </div>
 
             <div id="game-screen" class="hidden text-center py-4">
                 <h2 class="text-2xl font-bold text-blue-600 mb-2">Spielpause! 🎮</h2>
-                <div class="relative inline-block">
-                    <canvas id="game-canvas" width="300" height="300"></canvas>
-                    <div id="game-score" class="absolute top-2 right-4 font-bold text-blue-500 text-xl font-mono">0/10</div>
-                </div>
+                <canvas id="game-canvas" width="300" height="300" class="mx-auto"></canvas>
+                <div id="game-score" class="mt-2 font-bold text-blue-500 text-xl">0/10</div>
             </div>
 
             <div id="result-screen" class="hidden text-center py-6">
@@ -121,188 +115,159 @@
                 <p id="score-display" class="text-xl text-slate-600 mt-2 mb-6"></p>
                 <div id="mistake-analysis" class="mb-8 max-h-60 overflow-y-auto pr-2"></div>
                 <div class="grid grid-cols-1 gap-3">
-                    <button onclick="exportCSV()" class="bg-white border-2 border-slate-200 text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 font-medium">📥 CSV Export</button>
-                    <button onclick="location.reload()" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md">Neustart</button>
+                    <button onclick="exportCSV()" class="bg-white border-2 border-slate-200 text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 font-medium">📥 CSV Export</button>
+                    <button onclick="location.reload()" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-md">Neustart</button>
                 </div>
             </div>
         </div>
 
         <div id="history-container" class="mt-12">
-            <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">📊 Verlauf</h3>
+            <h3 class="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wider">📊 Verlauf</h3>
             <div id="history-list" class="space-y-2"></div>
-            <button onclick="clearHistory()" class="mt-4 text-[10px] text-red-400 hover:text-red-600 underline">VERLAUF LÖSCHEN</button>
+            <button onclick="clearHistory()" class="mt-4 text-[10px] text-red-400 hover:text-red-600 underline uppercase">Verlauf löschen</button>
         </div>
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         let quizData = [], currentIndex = 0, score = 0, gamePoints = 0, gameActive = false, userMistakes = [];
+        let gameDone = false;
 
-        window.onload = () => {
-            // Wir brauche keinen Key mehr laden, nur noch den Verlauf anzeigen
-            renderHistory();
-        };
+        // Modus Umschaltung
+        document.getElementById('Modus').addEventListener('change', function() {
+            document.getElementById('section-pdf').classList.toggle('hidden', this.value !== 'PDF');
+            document.getElementById('section-csv').classList.toggle('hidden', this.value !== 'CSV');
+        });
 
+        // PDF Drag & Drop
+        function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('border-blue-500', 'bg-blue-50'); }
+        function handleDragLeave(e) { e.preventDefault(); document.getElementById('drop-zone').classList.remove('border-blue-500', 'bg-blue-50'); }
+        function handleDrop(e) {
+            e.preventDefault(); handleDragLeave(e);
+            const files = e.dataTransfer.files;
+            if (files[0]?.type === "application/pdf") {
+                document.getElementById('pdf-file').files = files;
+                document.getElementById('pdf-file').dispatchEvent(new Event('change'));
+            }
+        }
+
+        // CSV Drag & Drop
+        function handleDragOverCSV(e) { e.preventDefault(); document.getElementById('drop-zone-csv').classList.add('border-emerald-500', 'bg-emerald-100'); }
+        function handleDragLeaveCSV(e) { e.preventDefault(); document.getElementById('drop-zone-csv').classList.remove('border-emerald-500', 'bg-emerald-100'); }
+        function handleDropCSV(e) {
+            e.preventDefault(); handleDragLeaveCSV(e);
+            const files = e.dataTransfer.files;
+            if (files[0]?.name.endsWith('.csv')) { importCSV(files); }
+        }
+
+        // PDF Vorschau Logik
         document.getElementById('pdf-file').onchange = async (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
+            const file = e.target.files[0]; if(!file) return;
             document.getElementById('file-name').innerText = file.name;
             const reader = new FileReader();
             reader.onload = async function() {
-                const typedarray = new Uint8Array(this.result);
-                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
                 const page = await pdf.getPage(1);
                 const canvas = document.getElementById('pdf-canvas');
-                const viewport = page.getViewport({scale: 0.4});
+                const viewport = page.getViewport({scale: 0.5});
                 canvas.height = viewport.height; canvas.width = viewport.width;
                 await page.render({canvasContext: canvas.getContext('2d'), viewport: viewport}).promise;
-                document.getElementById('pdf-preview_title').style.display = 'flex';
-				document.getElementById('pdf-preview').style.display = 'flex';
+                document.getElementById('pdf-preview_title').style.display = 'block';
+                document.getElementById('pdf-preview').style.display = 'flex';
             };
             reader.readAsArrayBuffer(file);
         };
 
-        // 2. Die Start-Funktion: Greift nur auf PDF und Anzahl zu
-		async function startQuizGeneration() {
-			try {
-				const fileInput = document.getElementById('pdf-file');
-				const countInput = document.getElementById('question-count');
-
-				if (!fileInput || !fileInput.files[0]) {
-					return alert("Bitte wähle zuerst ein PDF-Dokument aus!");
-				}
-
-				const file = fileInput.files[0];
-				const count = countInput ? countInput.value : 5;
-
-				// UI umschalten
-				document.getElementById('setup-card').classList.add('hidden');
-				document.getElementById('status').classList.remove('hidden');
-
-				// Los geht's
-				await runAiFlow(file, count);
-			} catch (err) {
-				console.error(err);
-				alert("Fehler beim Starten: " + err.message);
-			}
-		}
-
-        async function runAiFlow(file, count) {
-		const statusText = document.getElementById('status-text');
-		
-		try {
-			// Schritt 1: PDF lokal in Base64 umwandeln
-			statusText.innerText = "PDF wird vorbereitet...";
-			const base64WithHeader = await toBase64(file);
-			const base64Data = base64WithHeader.split(',')[1]; 
-
-			statusText.innerText = "KI generiert Fragen (via Gemini 2.5)...";
-			
-			// Schritt 2: Anfrage an DEINEN Endpunkt statt an Google
-			const response = await fetch('/api/quiz', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					pdfBase64: base64Data,
-					questionCount: count
-				})
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Server-Fehler");
-        }
-
-        // Schritt 3: Ergebnis verarbeiten
-        quizData = await response.json();
-
-        document.getElementById('status').classList.add('hidden');
-        document.getElementById('quiz-container').classList.remove('hidden');
-        showQuestion();
-    } catch (err) {
-        alert("Fehler: " + err.message);
-		// Bei Fehler zurück zum Start
-        document.getElementById('status').classList.add('hidden');
-        document.getElementById('setup-card').classList.remove('hidden');
-        location.reload();
-    }
-}
-
-function importCSV(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const content = e.target.result;
-            const lines = content.split('\n');
-            const importedData = [];
-
-            // Wir starten bei Index 1, um die Kopfzeile zu überspringen
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-
-                // Spalten trennen (wir nutzen das Semikolon aus deinem Export)
-                // Die Regex sorgt dafür, dass Semikolons innerhalb von Anführungszeichen ignoriert werden
-                const cols = lines[i].match(/(".*?"|[^;]+)(?=\s*;|\s*$)/g);
-                
-                if (cols && cols.length >= 6) {
-                    const question = cols[0].replace(/"/g, "");
-                    const options = [
-                        cols[1].replace(/"/g, ""),
-                        cols[2].replace(/"/g, ""),
-                        cols[3].replace(/"/g, ""),
-                        cols[4].replace(/"/g, "")
-                    ];
-                    const correctAnswerText = cols[5].replace(/"/g, "").trim();
-                    const answerIndex = options.indexOf(correctAnswerText);
-
-                    importedData.push({
-                        question: question,
-                        options: options,
-                        answer: answerIndex !== -1 ? answerIndex : 0
-                    });
-                }
-            }
-
-            if (importedData.length > 0) {
-                quizData = importedData;
-                currentIndex = 0;
-                score = 0;
-                userMistakes = [];
-                
-                // UI umschalten zum Quiz
-                document.getElementById('setup-card').classList.add('hidden');
+        async function startQuizGeneration() {
+            const file = document.getElementById('pdf-file').files[0];
+            const count = document.getElementById('question-count').value;
+            if (!file) return alert("Bitte PDF wählen!");
+            document.getElementById('setup-card').classList.add('hidden');
+            document.getElementById('status').classList.remove('hidden');
+            
+            try {
+                const base64 = (await toBase64(file)).split(',')[1];
+                const response = await fetch('/api/quiz', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pdfBase64: base64, questionCount: count })
+                });
+                quizData = await response.json();
+                document.getElementById('status').classList.add('hidden');
                 document.getElementById('quiz-container').classList.remove('hidden');
                 showQuestion();
-                console.log("✅ Quiz erfolgreich aus CSV geladen!");
-            } else {
-                alert("Die CSV konnte nicht gelesen werden. Falsches Format?");
-            }
-        } catch (err) {
-            console.error("CSV Import Fehler:", err);
-            alert("Fehler beim Importieren der Datei.");
+            } catch (err) { alert("Fehler: " + err.message); location.reload(); }
         }
-    };
-    reader.readAsText(file, 'UTF-8');
-															   }
-			
+
+        function importCSV(source) {
+            const file = source.files ? source.files[0] : source[0];
+            if (!file) return;
+            document.getElementById('setup-card').classList.add('hidden');
+            document.getElementById('status').classList.remove('hidden');
+            document.getElementById('status-text').innerText = "CSV wird geladen...";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const lines = e.target.result.split('\n');
+                const imported = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].match(/(".*?"|[^;]+)(?=\s*;|\s*$)/g);
+                    if (cols && cols.length >= 6) {
+                        const opts = [cols[1], cols[2], cols[3], cols[4]].map(o => o.replace(/"/g, ""));
+                        imported.push({
+                            question: cols[0].replace(/"/g, ""),
+                            options: opts,
+                            answer: opts.indexOf(cols[5].replace(/"/g, "").trim())
+                        });
+                    }
+                }
+                setTimeout(() => {
+                    quizData = imported;
+                    document.getElementById('status').classList.add('hidden');
+                    document.getElementById('quiz-container').classList.remove('hidden');
+                    showQuestion();
+                }, 600);
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
         function showQuestion() {
             const triggerIdx = Math.floor(quizData.length / 2);
-            if (currentIndex === triggerIdx && gamePoints < 10 && quizData.length > 2) { startMiniGame(); return; }
+            if (currentIndex === triggerIdx && !gameDone && quizData.length > 2) { 
+                gameDone = true; startMiniGame(); return; 
+            }
+
             const q = quizData[currentIndex];
+            document.getElementById('feedback-area').classList.add('hidden');
             document.getElementById('progress-bar').style.width = `${(currentIndex / quizData.length) * 100}%`;
             document.getElementById('q-count').innerText = `Frage ${currentIndex + 1} von ${quizData.length}`;
             document.getElementById('question-text').innerText = q.question;
+            
             const optDiv = document.getElementById('options'); optDiv.innerHTML = '';
             q.options.forEach((opt, i) => {
                 const b = document.createElement('button');
-                b.className = "w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-blue-500 hover:bg-blue-50 transition-all font-medium text-slate-700";
+                b.className = "option-btn w-full text-left p-4 rounded-xl border-2 border-slate-100 transition-all font-medium bg-white";
                 b.innerText = opt;
-                b.onclick = () => { 
-                    if(i === q.answer) score++; else userMistakes.push({q: q.question, g: opt, c: q.options[q.answer]});
-                    currentIndex++; (currentIndex < quizData.length) ? showQuestion() : showRes(); 
+                b.onclick = () => {
+                    document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                    const isCorrect = (i === q.answer);
+                    const area = document.getElementById('feedback-area');
+                    const txt = document.getElementById('feedback-text');
+
+                    if(isCorrect) {
+                        score++; b.classList.add('border-green-500', 'bg-green-50');
+                        area.className = "mt-6 p-4 rounded-xl border-2 border-green-200 bg-green-50 animate-slideIn";
+                        txt.innerHTML = "✅ Richtig!"; txt.className = "text-green-700 font-bold";
+                    } else {
+                        userMistakes.push({q: q.question, g: opt, c: q.options[q.answer]});
+                        b.classList.add('border-red-500', 'bg-red-50');
+                        document.querySelectorAll('.option-btn')[q.answer].classList.add('border-green-500', 'bg-green-50');
+                        area.className = "mt-6 p-4 rounded-xl border-2 border-red-200 bg-red-50 animate-slideIn";
+                        txt.innerHTML = `❌ Falsch. Richtig ist:<br>${q.options[q.answer]}`;
+                        txt.className = "text-red-700 font-bold";
+                    }
+                    area.classList.remove('hidden');
+                    document.getElementById('next-q-btn').onclick = () => { currentIndex++; (currentIndex < quizData.length) ? showQuestion() : showRes(); };
                 };
                 optDiv.appendChild(b);
             });
@@ -311,7 +276,7 @@ function importCSV(input) {
         function startMiniGame() {
             document.getElementById('quiz-content').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
-            gameActive = true;
+            gameActive = true; gamePoints = 0;
             const canvas = document.getElementById('game-canvas'); const ctx = canvas.getContext('2d');
             let b = { x: 150, y: 150, r: 25 };
             canvas.onclick = (e) => {
@@ -322,7 +287,7 @@ function importCSV(input) {
                     if(gamePoints >= 10) { gameActive = false; document.getElementById('game-screen').classList.add('hidden'); document.getElementById('quiz-content').classList.remove('hidden'); showQuestion(); }
                 }
             };
-            function draw() { if(!gameActive) return; ctx.clearRect(0,0,300,300); ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fillStyle = '#3b82f6'; ctx.fill(); requestAnimationFrame(draw); }
+            function draw() { if(!gameActive) return; ctx.clearRect(0,0,300,300); ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fillStyle = '#3b82f6'; ctx.fill(); requestAnimationFrame(draw); }
             draw();
         }
 
@@ -331,11 +296,11 @@ function importCSV(input) {
             document.getElementById('result-screen').classList.remove('hidden');
             document.getElementById('score-display').innerText = `${score} von ${quizData.length} Punkten!`;
             if(userMistakes.length > 0) {
-                document.getElementById('mistake-analysis').innerHTML = `<p class="text-left font-bold text-red-600 mb-2 text-xs uppercase">Korrektur:</p>` + 
-                userMistakes.map(m => `<div class="text-left bg-red-50 p-3 rounded-lg mb-2 text-xs border border-red-100"><p class="font-bold text-slate-800">${m.q}</p><p class="text-red-500">❌ ${m.g}</p><p class="text-green-600">✅ ${m.c}</p></div>`).join('');
+                document.getElementById('mistake-analysis').innerHTML = `<p class="text-xs font-bold text-red-600 mb-2 uppercase">Korrektur:</p>` + 
+                userMistakes.map(m => `<div class="text-left bg-red-50 p-3 rounded-lg mb-2 text-xs border border-red-100"><p class="font-bold">${m.q}</p><p class="text-red-500">❌ ${m.g}</p><p class="text-green-600">✅ ${m.c}</p></div>`).join('');
             }
             const h = JSON.parse(localStorage.getItem('quiz_history') || '[]');
-            h.unshift({d: new Date().toLocaleDateString(), s: score, t: quizData.length, p: Math.round(score/quizData.length*100)});
+            h.unshift({d: new Date().toLocaleDateString(), p: Math.round(score/quizData.length*100)});
             localStorage.setItem('quiz_history', JSON.stringify(h.slice(0,10))); renderHistory();
         }
 
@@ -347,12 +312,12 @@ function importCSV(input) {
         function exportCSV() {
             let csv = "\uFEFFFrage;Option A;Option B;Option C;Option D;Antwort\n";
             quizData.forEach(q => { csv += `"${q.question}";${q.options.map(o => `"${o}"`).join(';')};"${q.options[q.answer]}"\n`; });
-            const b = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = "Quiz_Export.csv"; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'})); a.download = "Quiz_Export.csv"; a.click();
         }
 
-        function clearHistory() { if(confirm("Löschen?")) { localStorage.removeItem('quiz_history'); renderHistory(); } }
         const toBase64 = f => new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); r.onerror = rej; });
+        function clearHistory() { if(confirm("Verlauf löschen?")) { localStorage.removeItem('quiz_history'); renderHistory(); } }
+        window.onload = renderHistory;
     </script>
 </body>
 </html>
