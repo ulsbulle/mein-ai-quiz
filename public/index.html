@@ -3,219 +3,251 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Master 2.7.1 - Physics & Sound</title>
-    <link rel="icon" href="https://fav.farm/🚀" />
+    <title>AI Quiz Master 2.6.4 - Clear View</title>
+    <link rel="icon" href="https://fav.farm/🧠" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        #progress-bar { transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .game-viewport { position: relative; background: #0f172a; border: 8px solid #1e293b; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        #game-canvas, #home-canvas { cursor: crosshair; display: block; touch-action: none; }
-        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); transition: all 0.2s; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4); }
+        #progress-bar { transition: width 0.4s ease-in-out; }
+        #game-canvas, #home-canvas { 
+            cursor: none; /* Versteckt Standard-Maus für besseren Fokus */
+            background: #ffffff; 
+            border-radius: 1.5rem; 
+            border: 4px solid #e2e8f0; 
+            touch-action: none;
+        }
+        .animate-slideIn { animation: slideIn 0.4s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .option-btn:disabled { opacity: 0.8; cursor: not-allowed; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen pb-20">
+<body class="bg-slate-50 min-h-screen font-sans text-slate-900 pb-20">
 
     <div class="max-w-2xl mx-auto py-10 px-4">
         <div class="text-center mb-10">
-            <h1 class="text-5xl font-black text-slate-900 tracking-tight mb-2">QUIZ<span class="text-blue-600">AI</span></h1>
-            <p class="text-slate-500 font-medium italic italic">Physics & Sound Engine ©ZOLL-Rentner</p>
+            <h1 class="text-4xl font-extrabold text-blue-600 mb-2">🧠 AI Quiz Master 2.6.4</h1>
+            <p class="text-slate-500 italic">Glasklare Farben & Mini-Games</p>
         </div>
 
         <div id="setup-card" class="space-y-6">
-            <div class="glass-card shadow-2xl rounded-3xl p-8 border border-white">
+            <div class="bg-white shadow-xl rounded-2xl p-8 border border-slate-200">
                 <div class="space-y-6">
-                    <select id="Modus" class="w-full p-4 rounded-2xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold bg-white/50 text-slate-700">
-                        <option value="PDF">📄 PDF KI-ANALYSE</option>
-                        <option value="CSV">📂 CSV IMPORT</option>
-                    </select>
+                    <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                        <label for="Modus" class="block text-sm font-bold text-blue-800 mb-2">Modus wählen:</label>
+                        <select id="Modus" class="w-full p-3 rounded-lg border-2 border-blue-200 focus:border-blue-500 outline-none font-medium bg-white">
+                            <option value="PDF">📄 PDF analysieren (KI)</option>
+                            <option value="CSV">📂 CSV laden (Import)</option>
+                        </select>
+                    </div>
+
                     <div id="section-pdf" class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <input type="number" id="question-count" min="1" max="20" value="10" class="p-4 rounded-2xl border-2 border-slate-100 outline-none font-bold">
-                            <div class="bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl p-4 text-center text-xs font-bold text-blue-600 cursor-pointer" onclick="document.getElementById('pdf-file').click()">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Fragen</label>
+                                <input type="number" id="question-count" min="1" max="20" value="10" class="w-full px-4 py-2 border rounded-lg outline-none">
+                            </div>
+                            <div class="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center cursor-pointer bg-slate-50" onclick="document.getElementById('pdf-file').click()">
                                 <input type="file" id="pdf-file" accept="application/pdf" class="hidden">
-                                <span id="file-name">PDF WÄHLEN</span>
+                                <span id="file-name" class="text-xs text-slate-600 italic">PDF wählen</span>
                             </div>
                         </div>
-                        <button onclick="startQuizGeneration()" class="w-full btn-primary text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-widest">Quiz Erstellen</button>
+                        <button onclick="startQuizGeneration()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg mt-4 transition-all">🚀 Quiz generieren</button>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl text-white border-t-4 border-blue-500">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-black uppercase tracking-tighter italic">Physics Training</h3>
-                    <div id="home-game-score" class="text-3xl font-black text-blue-400">0</div>
+            <div class="bg-slate-900 rounded-2xl p-6 shadow-xl text-white">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">🎮 Trainings-Zone</h3>
+                <div id="home-game-selector" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button onclick="startDirectGame('clicker')" class="bg-slate-800 hover:bg-blue-600 p-3 rounded-xl text-xs font-bold transition-colors">🎯 Clicker</button>
+                    <button onclick="startDirectGame('catcher')" class="bg-slate-800 hover:bg-emerald-600 p-3 rounded-xl text-xs font-bold transition-colors">🍎 Fänger</button>
+                    <button onclick="startDirectGame('dodger')" class="bg-slate-800 hover:bg-red-600 p-3 rounded-xl text-xs font-bold transition-colors">🚀 Ufo</button>
+                    <button onclick="startDirectGame('grower')" class="bg-slate-800 hover:bg-amber-600 p-3 rounded-xl text-xs font-bold transition-colors">🫧 Blase</button>
                 </div>
-                <div class="game-viewport">
-                    <canvas id="home-canvas" width="320" height="400" class="mx-auto"></canvas>
-                    <div id="game-overlay" class="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity">
-                        <button onclick="startPhysicsGame('home-canvas')" class="bg-white text-slate-900 px-8 py-4 rounded-full font-black hover:scale-110 transition-transform">SPIEL STARTEN</button>
-                    </div>
+                
+                <div id="home-game-area" class="hidden mt-6 animate-slideIn text-center">
+                    <canvas id="home-canvas" width="300" height="300" class="mx-auto"></canvas>
+                    <div id="home-game-score" class="mt-4 text-2xl font-black text-blue-400">0 / 10</div>
+                    <button onclick="closeHomeGame()" class="mt-4 text-xs text-slate-400 underline">Training beenden</button>
                 </div>
             </div>
         </div>
 
-        <div id="quiz-container" class="hidden glass-card shadow-2xl rounded-[2.5rem] p-10 border border-white">
+        <div id="status" class="hidden text-center p-12 bg-white rounded-2xl shadow-md border border-slate-100">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 mx-auto mb-4"></div>
+            <p id="status-text" class="text-slate-700 font-medium italic">KI analysiert Dokument...</p>
+        </div>
+
+        <div id="quiz-container" class="hidden bg-white shadow-2xl rounded-3xl p-8 border border-slate-200">
             <div id="quiz-content">
-                <div class="flex justify-between items-center mb-8">
-                    <span id="q-count" class="text-xs font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-full uppercase"></span>
-                    <div class="w-32 bg-slate-100 rounded-full h-3 overflow-hidden">
-                        <div id="progress-bar" class="bg-blue-600 h-full w-0"></div>
-                    </div>
-                </div>
-                <h2 id="question-text" class="text-2xl font-bold text-slate-800 mb-8 leading-snug"></h2>
-                <div id="options" class="grid grid-cols-1 gap-4"></div>
-                <div id="feedback-area" class="hidden mt-10 p-8 rounded-3xl animate-slideIn text-center border-4">
-                    <p id="feedback-text" class="text-xl font-black mb-6 uppercase tracking-tight"></p>
-                    <button id="next-q-btn" class="w-full bg-slate-900 text-white font-black py-5 rounded-2xl shadow-lg hover:bg-black uppercase">Weiter</button>
+                <div class="w-full bg-slate-100 rounded-full h-2 mb-6"><div id="progress-bar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div></div>
+                <span id="q-count" class="text-[10px] font-bold text-blue-500 uppercase tracking-widest"></span>
+                <h2 id="question-text" class="text-xl font-bold text-slate-800 my-6 leading-relaxed"></h2>
+                <div id="options" class="space-y-3"></div>
+                <div id="feedback-area" class="hidden mt-8 p-6 rounded-2xl border-2 animate-slideIn text-center">
+                    <p id="feedback-text" class="text-lg font-bold mb-4"></p>
+                    <button id="next-q-btn" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl">Weiter →</button>
                 </div>
             </div>
-            <div id="game-screen" class="hidden">
-                <div class="text-center mb-6">
-                    <h2 class="text-3xl font-black text-slate-900 italic">PAUSE! ⚡</h2>
-                    <p class="text-slate-500 font-bold">Sammle 20 Punkte</p>
+
+            <div id="game-screen" class="hidden text-center py-4 animate-slideIn">
+                <h2 class="text-2xl font-bold text-blue-600 mb-6 italic">SPIELPAUSE! ⚡</h2>
+                <div id="quiz-game-selection" class="grid grid-cols-2 gap-3 mb-6">
+                    <button onclick="setupGame('clicker', 'game-canvas')" class="p-4 border-2 rounded-2xl bg-white hover:border-blue-400 font-bold">🎯 Clicker</button>
+                    <button onclick="setupGame('catcher', 'game-canvas')" class="p-4 border-2 rounded-2xl bg-white hover:border-emerald-400 font-bold">🍎 Fänger</button>
+                    <button onclick="setupGame('dodger', 'game-canvas')" class="p-4 border-2 rounded-2xl bg-white hover:border-red-400 font-bold">🚀 Ufo</button>
+                    <button onclick="setupGame('grower', 'game-canvas')" class="p-4 border-2 rounded-2xl bg-white hover:border-amber-400 font-bold">🫧 Blase</button>
                 </div>
-                <div class="game-viewport mx-auto mb-6" style="width: 320px;">
-                    <canvas id="game-canvas" width="320" height="400"></canvas>
+                <div id="active-game-area" class="hidden">
+                    <canvas id="game-canvas" width="300" height="300" class="mx-auto"></canvas>
+                    <div id="game-score" class="mt-4 font-black text-blue-600 text-3xl">0 / 10</div>
                 </div>
-                <div id="game-score" class="text-4xl font-black text-blue-600 text-center">0 / 20</div>
             </div>
         </div>
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-        let quizData = [], currentIndex = 0, score = 0, gameActive = false, gamePoints = 0;
-        let gameInterval, world = { objects: [], particles: [] };
+        let quizData = [], currentIndex = 0, score = 0, gameActive = false, gamePoints = 0, gameDone = false, gameInterval;
 
-        // --- NEW SOUND ENGINE ---
+        // --- Sound Engine ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playEffect(type) {
+        function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
-
-            if (type === 'drop') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+            if (type === 'point') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-            } else if (type === 'merge') {
-                osc.type = 'triangle'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.2);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-            } else if (type === 'correct') {
-                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(1046, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
             }
         }
 
-        // --- PHYSICS ENGINE ---
-        function startPhysicsGame(canvasId) {
-            const canvas = document.getElementById(canvasId);
-            const ctx = canvas.getContext('2d');
-            const overlay = document.getElementById('game-overlay');
-            if(overlay) overlay.classList.add('opacity-0', 'pointer-events-none');
-            
+        // --- UI & Training ---
+        function toggleCard(id) {
+            ['setup-card', 'status', 'quiz-container'].forEach(c => document.getElementById(c).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function startDirectGame(type) {
+            document.getElementById('home-game-area').classList.remove('hidden');
+            document.getElementById('home-game-selector').classList.add('hidden');
+            setupGame(type, 'home-canvas');
+        }
+
+        function closeHomeGame() {
+            gameActive = false; clearInterval(gameInterval);
+            document.getElementById('home-game-area').classList.add('hidden');
+            document.getElementById('home-game-selector').classList.remove('hidden');
+        }
+
+        // --- Game Engine v2.6.4 (No Veil / Clear Colors) ---
+        function setupGame(type, canvasId) {
             gameActive = true; gamePoints = 0;
-            world.objects = []; world.particles = [];
             const scoreDisplay = canvasId === 'home-canvas' ? 'home-game-score' : 'game-score';
-
-            canvas.onpointerdown = (e) => {
-                if(!gameActive) return;
-                const r = canvas.getBoundingClientRect();
-                const x = e.clientX - r.left;
-                playEffect('drop');
-                spawnObject(x, 40);
-            };
-
-            function spawnObject(x, y) {
-                const types = ['🍎', '🍊', '🍇', '🍋', '🍒'];
-                world.objects.push({ x, y, vy: 0, vx: (Math.random()-0.5)*4, radius: 24, emoji: types[Math.floor(Math.random()*types.length)], bounciness: 0.5 });
+            document.getElementById(scoreDisplay).innerText = "0 / 10";
+            
+            if(canvasId === 'game-canvas') {
+                document.getElementById('quiz-game-selection').classList.add('hidden');
+                document.getElementById('active-game-area').classList.remove('hidden');
             }
 
-            if(gameInterval) clearInterval(gameInterval);
+            const canvas = document.getElementById(canvasId), ctx = canvas.getContext('2d');
+            let mouse = { x: 150, y: 150 }, enemies = [];
+            let targetX = 150, targetY = 150, targetR = 25;
+
+            canvas.onpointermove = (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
+            };
+
+            canvas.onpointerdown = () => {
+                const d = Math.sqrt((mouse.x - targetX)**2 + (mouse.y - targetY)**2);
+                if (type === 'clicker' && d < 35) { playSound('point'); updateScore(1, scoreDisplay); targetX = Math.random()*240+30; targetY = Math.random()*240+30; }
+                if (type === 'grower' && d < targetR) { targetR += 15; if(targetR > 70) { playSound('point'); updateScore(1, scoreDisplay); targetR = 25; targetX = Math.random()*200+50; targetY = Math.random()*200+50; } }
+            };
+
             gameInterval = setInterval(() => {
                 if(!gameActive) return;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.clearRect(0, 0, 300, 300);
                 
-                for(let i=0; i<world.objects.length; i++) {
-                    let obj = world.objects[i];
-                    obj.vy += 0.5; obj.y += obj.vy; obj.x += obj.vx;
+                // 1. HALO ZUERST (Hintergrund) - Verhindert den blassen Schleier
+                ctx.beginPath();
+                ctx.arc(mouse.x, mouse.y, 25, 0, Math.PI*2);
+                ctx.fillStyle = "rgba(59, 130, 246, 0.12)"; // Sehr zart
+                ctx.fill();
 
-                    if(obj.y + obj.radius > canvas.height) { obj.y = canvas.height - obj.radius; obj.vy *= -obj.bounciness; obj.vx *= 0.95; }
-                    if(obj.x - obj.radius < 0 || obj.x + obj.radius > canvas.width) { obj.vx *= -obj.bounciness; obj.x = obj.x < 0 ? obj.radius : canvas.width - obj.radius; }
+                // 2. OBJEKTE DANACH (Vordergrund)
+                ctx.font = "bold 46px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
-                    for(let j=i+1; j<world.objects.length; j++) {
-                        let other = world.objects[j];
-                        let dx = other.x - obj.x, dy = other.y - obj.y, dist = Math.sqrt(dx*dx + dy*dy), minDist = obj.radius + other.radius;
-                        if(dist < minDist) {
-                            if(obj.emoji === other.emoji) {
-                                playEffect('merge');
-                                createExplosion(obj.x, obj.y, '#fbbf24');
-                                world.objects.splice(j, 1); world.objects.splice(i, 1);
-                                gamePoints += 5; updateScoreUI(scoreDisplay); continue;
-                            }
-                            let angle = Math.atan2(dy, dx), tx = obj.x + Math.cos(angle) * minDist, ty = obj.y + Math.sin(angle) * minDist;
-                            let ax = (tx - other.x) * 0.1, ay = (ty - other.y) * 0.1;
-                            obj.vx -= ax; obj.vy -= ay; other.vx += ax; other.vy += ay;
-                        }
+                if (type === 'clicker') ctx.fillText("⭐", targetX, targetY);
+                if (type === 'catcher') {
+                    targetY += 4.2; if(targetY > 320) { targetY = -20; targetX = Math.random()*260+20; }
+                    ctx.fillText("🍎", targetX, targetY);
+                    if(Math.abs(mouse.x - targetX) < 35 && Math.abs(mouse.y - targetY) < 35) { 
+                        playSound('point'); updateScore(1, scoreDisplay); 
+                        targetY = -50; targetX = Math.random()*260+20; 
                     }
-                    ctx.font = `40px serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                    ctx.fillText(obj.emoji, obj.x, obj.y);
                 }
-
-                world.particles.forEach((p, index) => {
-                    p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-                    if(p.life <= 0) world.particles.splice(index, 1);
-                    ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
-                    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
-                });
-                ctx.globalAlpha = 1;
+                if (type === 'dodger') {
+                    ctx.fillText("🛸", mouse.x, mouse.y);
+                    if(Math.random() < 0.05) enemies.push({x: Math.random()*300, y: -20});
+                    enemies.forEach((en, i) => {
+                        en.y += 3.5; ctx.fillText("☄️", en.x, en.y);
+                        if(Math.sqrt((en.x-mouse.x)**2 + (en.y-mouse.y)**2) < 30) gamePoints = Math.max(0, gamePoints - 0.2);
+                        if(en.y > 320) enemies.splice(i, 1);
+                    });
+                    updateScore(0.02, scoreDisplay);
+                }
+                if (type === 'grower') {
+                    ctx.fillText("🫧", targetX, targetY);
+                    ctx.beginPath(); ctx.arc(targetX, targetY, targetR, 0, Math.PI*2); 
+                    ctx.strokeStyle = "#3b82f6"; ctx.lineWidth = 3; ctx.stroke();
+                }
             }, 1000/60);
         }
 
-        function createExplosion(x, y, color) {
-            for(let i=0; i<15; i++) world.particles.push({ x, y, color, life: 1, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12 });
+        function updateScore(p, displayId) {
+            gamePoints += p;
+            document.getElementById(displayId).innerText = `${Math.floor(gamePoints)} / 10`;
+            if (gamePoints >= 10) {
+                gameActive = false; clearInterval(gameInterval);
+                setTimeout(() => (displayId === 'home-game-score' ? closeHomeGame() : showQuestion()), 500);
+            }
         }
 
-        function updateScoreUI(id) {
-            const el = document.getElementById(id);
-            el.innerText = id === 'game-score' ? `${gamePoints} / 20` : gamePoints;
-            if(id === 'game-score' && gamePoints >= 20) { gameActive = false; setTimeout(showQuestion, 800); }
-        }
-
+        // --- Quiz System ---
         async function startQuizGeneration() {
             const file = document.getElementById('pdf-file').files[0];
-            if (!file) return alert("Wähle ein PDF!");
+            if (!file) return alert("PDF fehlt!");
             toggleCard('status');
             try {
                 const base64 = (await toBase64(file)).split(',')[1];
-                const res = await fetch('/api/quiz', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pdfBase64: base64, questionCount: document.getElementById('question-count').value }) });
+                const res = await fetch('/api/quiz', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pdfBase64: base64, questionCount: document.getElementById('question-count').value })
+                });
                 quizData = await res.json();
-                currentIndex = 0; score = 0; toggleCard('quiz-container'); showQuestion();
-            } catch (err) { alert("Analyse-Fehler!"); location.reload(); }
+                currentIndex = 0; score = 0; gameDone = false;
+                toggleCard('quiz-container'); showQuestion();
+            } catch (err) { alert("Fehler!"); location.reload(); }
         }
 
         function showQuestion() {
-            if (currentIndex === 5 && gamePoints < 20) {
+            if (currentIndex === Math.floor(quizData.length/2) && !gameDone) { 
+                gameDone = true; 
                 document.getElementById('quiz-content').classList.add('hidden');
                 document.getElementById('game-screen').classList.remove('hidden');
-                startPhysicsGame('game-canvas'); return;
+                document.getElementById('quiz-game-selection').classList.remove('hidden');
+                document.getElementById('active-game-area').classList.add('hidden');
+                return; 
             }
+            toggleCard('quiz-container');
             document.getElementById('quiz-content').classList.remove('hidden');
             document.getElementById('game-screen').classList.add('hidden');
+
             const q = quizData[currentIndex];
             document.getElementById('feedback-area').classList.add('hidden');
             document.getElementById('progress-bar').style.width = `${(currentIndex/quizData.length)*100}%`;
@@ -224,26 +256,22 @@
             const optDiv = document.getElementById('options'); optDiv.innerHTML = '';
             q.options.forEach((opt, i) => {
                 const b = document.createElement('button');
-                b.className = "p-5 rounded-2xl border-2 border-slate-100 bg-white font-bold text-left hover:bg-blue-50 text-slate-700";
+                b.className = "option-btn w-full text-left p-4 rounded-xl border-2 border-slate-100 bg-white font-medium shadow-sm hover:border-blue-400";
                 b.innerText = opt;
                 b.onclick = () => {
-                    document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
-                    const correct = (i === q.answer);
-                    if(correct) { score++; playEffect('correct'); b.classList.add('border-green-500', 'bg-green-50'); }
+                    document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                    const isCorrect = (i === q.answer);
+                    if(isCorrect) { score++; b.classList.add('border-green-500', 'bg-green-50'); }
                     else { b.classList.add('border-red-500', 'bg-red-50'); }
                     document.getElementById('feedback-area').classList.remove('hidden');
-                    document.getElementById('feedback-text').innerText = correct ? "Richtig! ✨" : "Falsch! ❌";
-                    document.getElementById('next-q-btn').onclick = () => { currentIndex++; (currentIndex < quizData.length) ? showQuestion() : alert("Score: " + score); };
+                    document.getElementById('feedback-text').innerText = isCorrect ? "Richtig! ✨" : `Falsch! Lösung: ${q.options[q.answer]}`;
+                    document.getElementById('next-q-btn').onclick = () => { currentIndex++; (currentIndex < quizData.length) ? showQuestion() : alert(`Fertig! Score: ${score}/${quizData.length}`); };
                 };
                 optDiv.appendChild(b);
             });
         }
 
         const toBase64 = f => new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); });
-        function toggleCard(id) {
-            ['setup-card', 'status', 'quiz-container'].forEach(c => document.getElementById(c)?.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-        }
     </script>
 </body>
 </html>
