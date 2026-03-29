@@ -46,7 +46,7 @@
                 <div id="section-pdf" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1">Fragenanzahl (Empfehlung: 10)</label>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Fragenanzahl</label>
                             <input type="number" id="question-count" min="1" max="20" value="10" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center hover:border-blue-400 transition-all cursor-pointer bg-slate-50"
@@ -63,7 +63,7 @@
                     <div id="drop-zone-csv" class="bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-2xl p-8 text-center cursor-pointer"
                          onclick="document.getElementById('csv-import').click()" ondragover="handleDragOverCSV(event)" ondragleave="handleDragLeaveCSV(event)" ondrop="handleDropCSV(event)">
                         <div class="text-4xl mb-3">📊</div>
-                        <p class="text-emerald-700 font-bold mb-4">CSV hierher ziehen oder klicken</p>
+                        <p class="text-emerald-700 font-bold mb-4 text-lg">CSV hierher ziehen oder klicken</p>
                         <input type="file" id="csv-import" accept=".csv" class="hidden" onchange="importCSV(this)">
                         <span class="bg-emerald-600 text-white py-2 px-6 rounded-xl font-bold">Datei wählen</span>
                     </div>
@@ -117,7 +117,10 @@
         </div>
 
         <div id="history-container" class="mt-12">
-            <h3 class="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wider flex justify-between items-center">📊 Verlauf <button onclick="clearHistory()" class="text-[10px] text-red-400 hover:text-red-600 underline">Löschen</button></h3>
+            <h3 class="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wider flex justify-between items-center italic">
+                📊 Letzte Ergebnisse
+                <button onclick="clearHistory()" class="text-[10px] text-red-400 hover:text-red-600 underline">Löschen</button>
+            </h3>
             <div id="history-list" class="space-y-2"></div>
         </div>
     </div>
@@ -127,15 +130,15 @@
         let quizData = [], currentIndex = 0, score = 0, gamePoints = 0, gameActive = false, userMistakes = [];
         let gameDone = false, currentGame = '', gameInterval;
 
-        // --- Sound Engine (Web Audio API) ---
+        // --- Sound Engine ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
-            
             if (type === 'correct') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523, audioCtx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
                 gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
@@ -146,14 +149,25 @@
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.4);
             } else if (type === 'point') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.1);
             }
         }
 
-        // --- Modus & Drag/Drop ---
+        // --- UI Manager ---
+        function toggleCard(id) {
+            const cards = ['setup-card', 'status', 'quiz-container'];
+            cards.forEach(c => {
+                const el = document.getElementById(c);
+                if(el) el.classList.add('hidden');
+            });
+            const target = document.getElementById(id);
+            if(target) target.classList.remove('hidden');
+        }
+
+        // --- PDF & CSV Logik ---
         document.getElementById('Modus').onchange = function() {
             document.getElementById('section-pdf').classList.toggle('hidden', this.value !== 'PDF');
             document.getElementById('section-csv').classList.toggle('hidden', this.value !== 'CSV');
@@ -186,7 +200,6 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // --- Core Quiz ---
         async function startQuizGeneration() {
             const file = document.getElementById('pdf-file').files[0];
             if (!file) return alert("Wähle ein PDF!");
@@ -199,8 +212,8 @@
                     body: JSON.stringify({ pdfBase64: base64, questionCount: document.getElementById('question-count').value })
                 });
                 quizData = await res.json();
-                toggleCard('quiz'); showQuestion();
-            } catch (err) { alert("Fehler!"); location.reload(); }
+                toggleCard('quiz-container'); showQuestion();
+            } catch (err) { alert("Fehler beim Generieren!"); location.reload(); }
         }
 
         function importCSV(source) {
@@ -209,19 +222,26 @@
             toggleCard('status');
             const r = new FileReader();
             r.onload = (e) => {
-                const lines = e.target.result.split('\n').slice(1);
-                quizData = lines.filter(l => l.trim()).map(l => {
-                    const c = l.match(/(".*?"|[^;]+)(?=\s*;|\s*$)/g);
-                    const opts = [c[1], c[2], c[3], c[4]].map(o => o.replace(/"/g, ""));
-                    return { question: c[0].replace(/"/g, ""), options: opts, answer: opts.indexOf(c[5].replace(/"/g, "").trim()) };
-                });
-                toggleCard('quiz'); showQuestion();
+                try {
+                    const lines = e.target.result.split('\n').slice(1);
+                    quizData = lines.filter(l => l.trim()).map(l => {
+                        const c = l.match(/(".*?"|[^;]+)(?=\s*;|\s*$)/g);
+                        const opts = [c[1], c[2], c[3], c[4]].map(o => o.replace(/"/g, ""));
+                        return { question: c[0].replace(/"/g, ""), options: opts, answer: opts.indexOf(c[5].replace(/"/g, "").trim()) };
+                    });
+                    toggleCard('quiz-container'); showQuestion();
+                } catch(e) { alert("CSV fehlerhaft!"); location.reload(); }
             };
             r.readAsText(file, 'UTF-8');
         }
 
+        // --- Quiz Flow ---
         function showQuestion() {
             if (currentIndex === Math.floor(quizData.length/2) && !gameDone && quizData.length > 2) { gameDone = true; startMiniGame(); return; }
+            document.getElementById('quiz-content').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+
             const q = quizData[currentIndex];
             document.getElementById('feedback-area').classList.add('hidden');
             document.getElementById('progress-bar').style.width = `${(currentIndex/quizData.length)*100}%`;
@@ -257,8 +277,16 @@
         }
 
         // --- Mini Game Engine ---
-        function startMiniGame() { document.getElementById('quiz-content').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden'); backToGameSelection(); }
-        function backToGameSelection() { gameActive = false; clearInterval(gameInterval); document.getElementById('game-selection').classList.remove('hidden'); document.getElementById('active-game-area').classList.add('hidden'); }
+        function startMiniGame() { 
+            document.getElementById('quiz-content').classList.add('hidden'); 
+            document.getElementById('game-screen').classList.remove('hidden'); 
+            backToGameSelection(); 
+        }
+        function backToGameSelection() { 
+            gameActive = false; clearInterval(gameInterval); 
+            document.getElementById('game-selection').classList.remove('hidden'); 
+            document.getElementById('active-game-area').classList.add('hidden'); 
+        }
         
         function setupGame(type) {
             currentGame = type; gameActive = true; gamePoints = 0;
@@ -267,14 +295,13 @@
             document.getElementById('active-game-area').classList.remove('hidden');
             const canvas = document.getElementById('game-canvas'), ctx = canvas.getContext('2d');
             let particles = [], enemies = [], obj = { x: 150, y: 150, r: 25, vX: 2, vY: 2, angle: 0 };
-
             function createExplosion(x, y, color) { for(let i=0; i<8; i++) particles.push({x, y, vX: (Math.random()-0.5)*10, vY: (Math.random()-0.5)*10, life: 1, color}); }
 
             canvas.onpointerdown = (e) => {
                 const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
-                const dist = Math.sqrt((mx - obj.x)**2 + (my - obj.y)**2);
-                if (currentGame === 'clicker' && dist < obj.r + 10) { createExplosion(obj.x, obj.y, '#fbbf24'); playSound('point'); updateScore(1); obj.x = Math.random()*240+30; obj.y = Math.random()*240+30; }
-                if (currentGame === 'grower' && dist < obj.r) { obj.r += 12; if(obj.r > 75) { createExplosion(obj.x, obj.y, '#3b82f6'); playSound('point'); updateScore(1); obj.r = 25; obj.x = Math.random()*200+50; } }
+                const d = Math.sqrt((mx - obj.x)**2 + (my - obj.y)**2);
+                if (currentGame === 'clicker' && d < obj.r + 15) { createExplosion(obj.x, obj.y, '#fbbf24'); playSound('point'); updateScore(1); obj.x = Math.random()*240+30; obj.y = Math.random()*240+30; }
+                if (currentGame === 'grower' && d < obj.r) { obj.r += 12; if(obj.r > 75) { createExplosion(obj.x, obj.y, '#3b82f6'); playSound('point'); updateScore(1); obj.r = 25; obj.x = Math.random()*200+50; } }
             };
 
             gameInterval = setInterval(() => {
@@ -309,13 +336,14 @@
 
         function updateScore(p) {
             gamePoints += p; document.getElementById('game-score').innerText = `${Math.floor(gamePoints)} / 10`;
-            if (gamePoints >= 10) { gameActive = false; clearInterval(gameInterval); setTimeout(() => { document.getElementById('game-screen').classList.add('hidden'); document.getElementById('quiz-content').classList.remove('hidden'); showQuestion(); }, 600); }
+            if (gamePoints >= 10) { gameActive = false; clearInterval(gameInterval); setTimeout(() => showQuestion(), 600); }
         }
 
-        // --- Helpers ---
-        function toggleCard(id) { ['setup-card', 'status', 'quiz-container'].forEach(c => document.getElementById(c).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+        // --- Finish ---
         function showRes() {
-            toggleCard('result-screen'); const percent = Math.round(score/quizData.length*100);
+            document.getElementById('quiz-content').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            const percent = Math.round(score/quizData.length*100);
             document.getElementById('score-display').innerText = `${score} von ${quizData.length} richtig (${percent}%)`;
             document.getElementById('mistake-analysis').innerHTML = userMistakes.length ? userMistakes.map(m => `<div class="p-3 bg-white border border-slate-200 rounded-xl text-xs shadow-sm"><p class="font-bold mb-1">${m.q}</p><p class="text-red-500">❌ Wahl: ${m.g}</p><p class="text-green-600">✅ Lösung: ${m.c}</p></div>`).join('') : '<p class="text-green-600 font-bold italic">Perfekt! Alles richtig. 🌟</p>';
             const h = JSON.parse(localStorage.getItem('quiz_history') || '[]'); h.unshift({d: new Date().toLocaleDateString(), p: percent});
