@@ -9,10 +9,10 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // Wichtig für große PDFs
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
-// --- AUTOMATISCHER VERBINDUNGSTEST ---
+// --- AUTOMATISCHER VERBINDUNGSTEST (BEIM START) ---
 async function checkGoogleConnection() {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -20,7 +20,8 @@ async function checkGoogleConnection() {
         return;
     }
     try {
-        const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // Umstellung auf v1 Stable
+        const testUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         const response = await fetch(testUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -28,7 +29,7 @@ async function checkGoogleConnection() {
         });
         const data = await response.json();
         if (response.ok) {
-            console.log("✅ GOOGLE API CHECK: Verbindung steht! Modell bereit.");
+            console.log("✅ GOOGLE API CHECK: Verbindung erfolgreich! v1/gemini-1.5-flash ist bereit.");
         } else {
             console.error("❌ GOOGLE API CHECK FEHLGESCHLAGEN:", JSON.stringify(data.error || data));
         }
@@ -37,25 +38,25 @@ async function checkGoogleConnection() {
     }
 }
 
-// --- HAUPT-LOGIK FÜR DAS QUIZ ---
+// --- HAUPT-ENDPUNKT FÜR QUIZ-GENERIERUNG ---
 app.post('/api/quiz', async (req, res) => {
     try {
         let { pdfBase64, questionCount } = req.body;
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // 1. BASE64 BEREINIGEN (Entfernt Header wie 'data:application/pdf;base64,')
+        // Base64-Header entfernen (Data-URL Bereinigung)
         if (pdfBase64 && pdfBase64.includes(',')) {
-            console.log("Info: Base64-Header erkannt und entfernt.");
             pdfBase64 = pdfBase64.split(',')[1];
         }
 
         if (!pdfBase64) {
-            return res.status(400).json({ error: "Kein PDF-Inhalt (Base64) empfangen." });
+            return res.status(400).json({ error: "Kein PDF-Inhalt empfangen." });
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // URL auf v1 Stable gesetzt
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-        console.log(`Anfrage an Google gestartet (${questionCount} Fragen)...`);
+        console.log(`Anfrage an Google v1 gestartet (${questionCount} Fragen)...`);
 
         const response = await fetch(url, {
             method: 'POST',
@@ -65,7 +66,7 @@ app.post('/api/quiz', async (req, res) => {
                     parts: [
                         { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
                         { text: `Erstelle exakt ${questionCount} Multiple-Choice-Fragen auf Deutsch basierend auf diesem Dokument. 
-                                 Antworte AUSSCHLIESSLICH als JSON-Array in diesem Format: 
+                                 Antworte NUR als JSON-Array in diesem Format: 
                                  [{"question":"Frage","options":["A","B","C","D"],"answer":0}]` }
                     ]
                 }],
@@ -84,38 +85,28 @@ app.post('/api/quiz', async (req, res) => {
 
         const data = await response.json();
 
-        // 2. DETAILLIERTE FEHLERPRÜFUNG
         if (!data.candidates || data.candidates.length === 0) {
-            console.error("🚨 GOOGLE BLOCKIERT: ", JSON.stringify(data));
-            
-            // Spezifische Meldung für den User
-            let errorMsg = "Google liefert keine Daten.";
-            if (data.promptFeedback?.blockReason) {
-                errorMsg += ` Grund: ${data.promptFeedback.blockReason} (Safety-Filter)`;
-            }
-
+            console.error("🚨 GOOGLE BLOCKIERT:", JSON.stringify(data));
             return res.status(500).json({ 
-                error: errorMsg,
-                debug: data 
+                error: "Google liefert keine Daten. Prüfe Railway Logs.",
+                details: data 
             });
         }
 
         let resultText = data.candidates[0].content.parts[0].text;
-        
-        // Markdown-Reste entfernen
         resultText = resultText.replace(/```json|```/g, "").trim();
         
         console.log("✅ Quiz erfolgreich generiert!");
         res.status(200).json(JSON.parse(resultText));
 
     } catch (error) {
-        console.error("🔥 KRITISCHER SERVER-FEHLER:", error.message);
-        res.status(500).json({ error: "Server-Fehler: " + error.message });
+        console.error("🔥 SERVER-FEHLER:", error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
 // SERVER START
 app.listen(PORT, '0.0.0.0', async () => {
-    console.log(`🚀 Server läuft auf Port ${PORT} (0.0.0.0)`);
+    console.log(`🚀 Server aktiv auf Port ${PORT}`);
     await checkGoogleConnection();
 });
