@@ -84,7 +84,7 @@
                          onclick="document.getElementById('csv-import').click()" ondragover="handleDragOverCSV(event)" ondragleave="handleDragLeaveCSV(event)" ondrop="handleDropCSV(event)">
                         <div class="text-4xl mb-3">📊</div>
                         <p class="text-emerald-700 font-bold mb-4 text-lg">CSV hierher ziehen oder klicken</p>
-                        <input type="file" id="csv-import" accept=".csv" class="hidden" onchange="importCSV(this)">
+                        <input type="file" id="csv-import" accept=".csv, text/csv, text/comma-separated-values, text/plain" class="hidden" onchange="importCSV(this)">
                         <span class="bg-emerald-600 text-white py-2 px-6 rounded-xl font-bold">Datei wählen</span>
                     </div>
                     </div>
