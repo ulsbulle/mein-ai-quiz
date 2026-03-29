@@ -195,9 +195,9 @@
 			const base64WithHeader = await toBase64(file);
 			const base64Data = base64WithHeader.split(',')[1]; 
 
-			statusText.innerText = "KI generiert Fragen (via Vercel)...";
+			statusText.innerText = "KI generiert Fragen (via Gemini 2.5)...";
 			
-			// Schritt 2: Anfrage an DEINEN Vercel-Endpunkt statt an Google
+			// Schritt 2: Anfrage an DEINEN Endpunkt statt an Google
 			const response = await fetch('/api/quiz', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
