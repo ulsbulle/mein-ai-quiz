@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Master Pro 2.6.1</title>
+    <title>AI Quiz Master Pro 2.6.2</title>
     <link rel="icon" href="https://fav.farm/🧠" />
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
         #progress-bar { transition: width 0.4s ease-in-out; }
-        /* Cursor auf Standard-Pfeil für maximale Sichtbarkeit */
         #game-canvas { 
             cursor: default; 
             background: radial-gradient(circle, #ffffff 0%, #f1f5f9 100%); 
@@ -21,61 +19,77 @@
         .animate-slideIn { animation: slideIn 0.4s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .option-btn:disabled { opacity: 0.8; cursor: not-allowed; }
-        .history-card { animation: slideIn 0.3s ease-out; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900 pb-20">
 
     <div class="max-w-2xl mx-auto py-10 px-4">
         <div class="sticky top-0 z-10 bg-slate-50 text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">🧠 AI Quiz Master 2.6.1 🧠</h1>
-            <p class="text-slate-500 italic">Lernen mit System, Sound & Fokus ©ZOLL-Rentner</p>
+            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">🧠 AI Quiz Master 2.6.2 🧠</h1>
+            <p class="text-slate-500 italic">Lernen & Spielen ©ZOLL-Rentner</p>
         </div>
 
-        <div id="setup-card" class="bg-white shadow-xl rounded-2xl p-8 mb-6 border border-slate-200">
-            <div class="space-y-6">
-                <div class="bg-slate-50 p-5 rounded-xl border border-slate-100">
-                    <label class="block text-base font-bold text-slate-700 mb-3 underline">Kurzanleitung:</label>
-                    <ul class="text-sm md:text-base text-slate-600 space-y-2 list-disc ml-5 leading-relaxed">
-                        <li>Wähle <b>PDF</b> für KI-Analyse oder <b>CSV</b> für Import.</li>
-                        <li>Nutze <b>Drag & Drop</b> zum Hochladen der Dateien.</li>
-                        <li>In der Spielpause hilft dir ein <b>Leuchtkreis</b> beim Zielen.</li>
-                        <li>Lerne durch direktes Feedback & Sound-Effekte.</li>
-                    </ul>
-                </div>
+        <div id="setup-card" class="space-y-6">
+            <div class="bg-white shadow-xl rounded-2xl p-8 border border-slate-200">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-100">
+                        <label class="block text-base font-bold text-slate-700 mb-2 underline">Kurzanleitung:</label>
+                        <ul class="text-sm text-slate-600 space-y-1 list-disc ml-5 leading-relaxed">
+                            <li>Wähle <b>PDF</b> oder <b>CSV</b> für den Start.</li>
+                            <li>In der Spielpause hilft dir der <b>Leuchtkreis</b> beim Zielen.</li>
+                            <li>Nutze die <b>Trainings-Zone</b> unten zum Üben!</li>
+                        </ul>
+                    </div>
 
-                <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                    <label for="Modus" class="block text-sm font-bold text-blue-800 mb-2">Modus wählen:</label>
-                    <select id="Modus" class="w-full p-3 rounded-lg border-2 border-blue-200 focus:border-blue-500 outline-none font-medium bg-white">
-                        <option value="PDF">📄 PDF analysieren (KI)</option>
-                        <option value="CSV">📂 CSV laden (Import)</option>
-                    </select>
-                </div>
+                    <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                        <label for="Modus" class="block text-sm font-bold text-blue-800 mb-2">Modus wählen:</label>
+                        <select id="Modus" class="w-full p-3 rounded-lg border-2 border-blue-200 focus:border-blue-500 outline-none font-medium bg-white">
+                            <option value="PDF">📄 PDF analysieren (KI)</option>
+                            <option value="CSV">📂 CSV laden (Import)</option>
+                        </select>
+                    </div>
 
-                <div id="section-pdf" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1">Fragenanzahl</label>
-                            <input type="number" id="question-count" min="1" max="20" value="10" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <div id="section-pdf" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Fragenanzahl</label>
+                                <input type="number" id="question-count" min="1" max="20" value="10" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                            <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center hover:border-blue-400 transition-all cursor-pointer bg-slate-50"
+                                 onclick="document.getElementById('pdf-file').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                                <input type="file" id="pdf-file" accept="application/pdf" class="hidden">
+                                <span id="file-name" class="text-xs text-slate-600 font-medium italic">PDF hierher ziehen</span>
+                            </div>
                         </div>
-                        <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center hover:border-blue-400 transition-all cursor-pointer bg-slate-50"
-                             onclick="document.getElementById('pdf-file').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-                            <input type="file" id="pdf-file" accept="application/pdf" class="hidden">
-                            <span id="file-name" class="text-xs text-slate-600 font-medium italic">PDF hierher ziehen</span>
+                        <button onclick="startQuizGeneration()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg mt-4">🚀 Quiz generieren</button>
+                    </div>
+
+                    <div id="section-csv" class="hidden animate-slideIn">
+                        <div id="drop-zone-csv" class="bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-2xl p-8 text-center cursor-pointer"
+                             onclick="document.getElementById('csv-import').click()" ondragover="handleDragOverCSV(event)" ondragleave="handleDragLeaveCSV(event)" ondrop="handleDropCSV(event)">
+                            <p class="text-emerald-700 font-bold mb-4">CSV hierher ziehen oder klicken</p>
+                            <input type="file" id="csv-import" accept=".csv" class="hidden" onchange="importCSV(this)">
+                            <span class="bg-emerald-600 text-white py-2 px-6 rounded-xl font-bold">Datei wählen</span>
                         </div>
                     </div>
-                    <div id="pdf-preview-box" class="hidden mt-4 border rounded-xl overflow-hidden bg-slate-100 flex justify-center"><canvas id="pdf-canvas" class="max-w-full h-auto"></canvas></div>
-                    <button onclick="startQuizGeneration()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg mt-4">🚀 Quiz generieren</button>
                 </div>
+            </div>
 
-                <div id="section-csv" class="hidden animate-slideIn">
-                    <div id="drop-zone-csv" class="bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-2xl p-8 text-center cursor-pointer"
-                         onclick="document.getElementById('csv-import').click()" ondragover="handleDragOverCSV(event)" ondragleave="handleDragLeaveCSV(event)" ondrop="handleDropCSV(event)">
-                        <div class="text-4xl mb-3">📊</div>
-                        <p class="text-emerald-700 font-bold mb-4 text-lg">CSV hierher ziehen oder klicken</p>
-                        <input type="file" id="csv-import" accept=".csv" class="hidden" onchange="importCSV(this)">
-                        <span class="bg-emerald-600 text-white py-2 px-6 rounded-xl font-bold">Datei wählen</span>
-                    </div>
+            <div class="bg-slate-900 rounded-2xl p-6 shadow-xl text-white">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <span class="text-2xl">🎮</span> Trainings-Zone (Spiele testen)
+                </h3>
+                <div id="home-game-selector" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button onclick="startDirectGame('clicker')" class="bg-slate-800 hover:bg-blue-600 p-3 rounded-xl text-xs font-bold transition-colors">🎯 Clicker</button>
+                    <button onclick="startDirectGame('catcher')" class="bg-slate-800 hover:bg-emerald-600 p-3 rounded-xl text-xs font-bold transition-colors">🍎 Fänger</button>
+                    <button onclick="startDirectGame('dodger')" class="bg-slate-800 hover:bg-red-600 p-3 rounded-xl text-xs font-bold transition-colors">🚀 Ufo</button>
+                    <button onclick="startDirectGame('grower')" class="bg-slate-800 hover:bg-amber-600 p-3 rounded-xl text-xs font-bold transition-colors">🫧 Blase</button>
+                </div>
+                
+                <div id="home-game-area" class="hidden mt-6 animate-slideIn text-center">
+                    <canvas id="home-canvas" width="300" height="300" class="mx-auto rounded-xl border-2 border-slate-700 bg-white"></canvas>
+                    <div id="home-game-score" class="mt-4 text-2xl font-black text-blue-400">0 / 10</div>
+                    <button onclick="closeHomeGame()" class="mt-4 text-xs text-slate-400 underline">Training beenden</button>
                 </div>
             </div>
         </div>
@@ -89,46 +103,40 @@
             <div id="quiz-content">
                 <div class="w-full bg-slate-100 rounded-full h-2 mb-6"><div id="progress-bar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div></div>
                 <span id="q-count" class="text-[10px] font-bold text-blue-500 uppercase tracking-widest"></span>
-                <h2 id="question-text" class="text-xl font-bold text-slate-800 my-6 leading-tight"></h2>
+                <h2 id="question-text" class="text-xl font-bold text-slate-800 my-6"></h2>
                 <div id="options" class="space-y-3"></div>
                 <div id="feedback-area" class="hidden mt-8 p-6 rounded-2xl border-2 animate-slideIn">
                     <p id="feedback-text" class="text-lg mb-4"></p>
-                    <button id="next-q-btn" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-black transition shadow-lg">Nächste Frage →</button>
+                    <button id="next-q-btn" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl">Nächste Frage →</button>
                 </div>
             </div>
 
             <div id="game-screen" class="hidden text-center py-4 animate-slideIn">
                 <h2 class="text-2xl font-bold text-blue-600 mb-2">Spielpause! 🎮</h2>
-                <p class="text-slate-500 mb-6 text-sm font-medium italic">Sammle 10 Punkte zum Weitermachen:</p>
-                <div id="game-selection" class="grid grid-cols-2 gap-3 mb-6">
-                    <button onclick="setupGame('clicker')" class="p-4 border-2 border-slate-100 rounded-2xl hover:border-blue-400 bg-white shadow-sm transition-all">🎯 Clicker</button>
-                    <button onclick="setupGame('catcher')" class="p-4 border-2 border-slate-100 rounded-2xl hover:border-emerald-400 bg-white shadow-sm transition-all">🍎 Fänger</button>
-                    <button onclick="setupGame('dodger')" class="p-4 border-2 border-slate-100 rounded-2xl hover:border-red-400 bg-white shadow-sm transition-all">🚀 Ufo</button>
-                    <button onclick="setupGame('grower')" class="p-4 border-2 border-slate-100 rounded-2xl hover:border-amber-400 bg-white shadow-sm transition-all">🫧 Blase</button>
+                <div id="quiz-game-selection" class="grid grid-cols-2 gap-3 mb-6">
+                    <button onclick="setupGame('clicker', 'game-canvas')" class="p-4 border-2 rounded-2xl bg-white hover:border-blue-400 transition-all">🎯 Clicker</button>
+                    <button onclick="setupGame('catcher', 'game-canvas')" class="p-4 border-2 rounded-2xl bg-white hover:border-emerald-400 transition-all">🍎 Fänger</button>
+                    <button onclick="setupGame('dodger', 'game-canvas')" class="p-4 border-2 rounded-2xl bg-white hover:border-red-400 transition-all">🚀 Ufo</button>
+                    <button onclick="setupGame('grower', 'game-canvas')" class="p-4 border-2 rounded-2xl bg-white hover:border-amber-400 transition-all">🫧 Blase</button>
                 </div>
                 <div id="active-game-area" class="hidden">
                     <canvas id="game-canvas" width="300" height="300" class="mx-auto"></canvas>
                     <div id="game-score" class="mt-4 font-black text-blue-600 text-3xl italic">0 / 10</div>
-                    <button onclick="backToGameSelection()" class="mt-4 text-[10px] text-slate-400 underline uppercase">Anderes Spiel</button>
                 </div>
             </div>
 
             <div id="result-screen" class="hidden text-center py-6">
-                <div class="text-6xl mb-4 text-green-500">🏆</div>
                 <h2 class="text-3xl font-bold text-slate-800 mb-2">Auswertung</h2>
                 <p id="score-display" class="text-xl text-slate-600 mb-8 font-medium"></p>
-                <div id="mistake-analysis" class="mb-8 space-y-2 text-left max-h-64 overflow-y-auto pr-2"></div>
-                <div class="flex flex-col gap-3">
-                    <button onclick="exportCSV()" class="w-full bg-white border-2 border-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-50">📥 CSV Export</button>
-                    <button onclick="location.reload()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg">Neustart</button>
-                </div>
+                <div id="mistake-analysis" class="mb-8 space-y-2 text-left max-h-64 overflow-y-auto"></div>
+                <button onclick="location.reload()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg">Neustart</button>
             </div>
         </div>
 
         <div id="history-container" class="mt-12">
-            <h3 class="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wider flex justify-between items-center italic">
+            <h3 class="font-bold text-slate-700 mb-4 text-xs uppercase tracking-wider italic flex justify-between">
                 📊 Letzte Ergebnisse
-                <button onclick="clearHistory()" class="text-[10px] text-red-400 hover:text-red-600 underline">Löschen</button>
+                <button onclick="clearHistory()" class="text-red-400 underline">Löschen</button>
             </h3>
             <div id="history-list" class="space-y-2"></div>
         </div>
@@ -137,7 +145,7 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         let quizData = [], currentIndex = 0, score = 0, gamePoints = 0, gameActive = false, userMistakes = [];
-        let gameDone = false, currentGame = '', gameInterval;
+        let gameDone = false, gameInterval, currentTargetCanvas = 'game-canvas';
 
         // --- Sound Engine ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -146,29 +154,25 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
-            if (type === 'correct') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(523, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-            } else if (type === 'wrong') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-            } else if (type === 'point') {
+            if (type === 'point') {
                 osc.type = 'sine'; osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'correct') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
             }
         }
 
         // --- UI Manager ---
         function toggleCard(id) {
-            const cards = ['setup-card', 'status', 'quiz-container'];
-            cards.forEach(c => {
+            ['setup-card', 'status', 'quiz-container'].forEach(c => {
                 const el = document.getElementById(c);
                 if(el) el.classList.add('hidden');
             });
@@ -176,42 +180,46 @@
             if(target) target.classList.remove('hidden');
         }
 
-        // --- Dateihandling ---
+        // --- Trainings-Zone Logik ---
+        function startDirectGame(type) {
+            document.getElementById('home-game-area').classList.remove('hidden');
+            document.getElementById('home-game-selector').classList.add('hidden');
+            setupGame(type, 'home-canvas');
+        }
+
+        function closeHomeGame() {
+            gameActive = false;
+            clearInterval(gameInterval);
+            document.getElementById('home-game-area').classList.add('hidden');
+            document.getElementById('home-game-selector').classList.remove('hidden');
+        }
+
+        // --- CSV / PDF Import (Kurzversion) ---
         document.getElementById('Modus').onchange = function() {
             document.getElementById('section-pdf').classList.toggle('hidden', this.value !== 'PDF');
             document.getElementById('section-csv').classList.toggle('hidden', this.value !== 'CSV');
         };
 
-        function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('border-blue-400', 'bg-blue-50'); }
-        function handleDragLeave(e) { e.preventDefault(); e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50'); }
-        function handleDrop(e) {
-            e.preventDefault(); handleDragLeave(e);
-            const file = e.dataTransfer.files[0];
-            if(file?.type === "application/pdf") { document.getElementById('pdf-file').files = e.dataTransfer.files; document.getElementById('pdf-file').dispatchEvent(new Event('change')); }
-        }
-        function handleDragOverCSV(e) { e.preventDefault(); e.currentTarget.classList.add('border-emerald-400', 'bg-emerald-100'); }
-        function handleDragLeaveCSV(e) { e.preventDefault(); e.currentTarget.classList.remove('border-emerald-400', 'bg-emerald-100'); }
-        function handleDropCSV(e) { e.preventDefault(); handleDragLeaveCSV(e); importCSV(e.dataTransfer.files); }
-
-        document.getElementById('pdf-file').onchange = async (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            document.getElementById('file-name').innerText = file.name;
-            const reader = new FileReader();
-            reader.onload = async function() {
-                const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
-                const page = await pdf.getPage(1);
-                const canvas = document.getElementById('pdf-canvas');
-                const viewport = page.getViewport({scale: 0.4});
-                canvas.height = viewport.height; canvas.width = viewport.width;
-                await page.render({canvasContext: canvas.getContext('2d'), viewport: viewport}).promise;
-                document.getElementById('pdf-preview-box').classList.remove('hidden');
+        function importCSV(source) {
+            const file = source.files ? source.files[0] : source[0];
+            if (!file) return;
+            toggleCard('status');
+            const r = new FileReader();
+            r.onload = (e) => {
+                const lines = e.target.result.split('\n').slice(1);
+                quizData = lines.filter(l => l.trim()).map(l => {
+                    const c = l.match(/(".*?"|[^;]+)(?=\s*;|\s*$)/g);
+                    const opts = [c[1], c[2], c[3], c[4]].map(o => o.replace(/"/g, ""));
+                    return { question: c[0].replace(/"/g, ""), options: opts, answer: opts.indexOf(c[5].replace(/"/g, "").trim()) };
+                });
+                toggleCard('quiz-container'); showQuestion();
             };
-            reader.readAsArrayBuffer(file);
-        };
+            r.readAsText(file, 'UTF-8');
+        }
 
         async function startQuizGeneration() {
             const file = document.getElementById('pdf-file').files[0];
-            if (!file) return alert("Wähle ein PDF!");
+            if (!file) return alert("PDF fehlt!");
             toggleCard('status');
             try {
                 const base64 = (await toBase64(file)).split(',')[1];
@@ -225,31 +233,21 @@
             } catch (err) { alert("Fehler!"); location.reload(); }
         }
 
-        function importCSV(source) {
-            const file = source.files ? source.files[0] : source[0];
-            if (!file) return;
-            toggleCard('status');
-            const r = new FileReader();
-            r.onload = (e) => {
-                try {
-                    const lines = e.target.result.split('\n').slice(1);
-                    quizData = lines.filter(l => l.trim()).map(l => {
-                        const c = l.match(/(".*?"|[^;]+)(?=\s*;|\s*$)/g);
-                        const opts = [c[1], c[2], c[3], c[4]].map(o => o.replace(/"/g, ""));
-                        return { question: c[0].replace(/"/g, ""), options: opts, answer: opts.indexOf(c[5].replace(/"/g, "").trim()) };
-                    });
-                    toggleCard('quiz-container'); showQuestion();
-                } catch(e) { alert("CSV fehlerhaft!"); location.reload(); }
-            };
-            r.readAsText(file, 'UTF-8');
-        }
-
         // --- Quiz Flow ---
         function showQuestion() {
-            if (currentIndex === Math.floor(quizData.length/2) && !gameDone && quizData.length > 2) { gameDone = true; startMiniGame(); return; }
+            if (currentIndex === Math.floor(quizData.length/2) && !gameDone && quizData.length > 2) { 
+                gameDone = true; 
+                document.getElementById('quiz-content').classList.add('hidden');
+                document.getElementById('game-screen').classList.remove('hidden');
+                document.getElementById('quiz-game-selection').classList.remove('hidden');
+                document.getElementById('active-game-area').classList.add('hidden');
+                return; 
+            }
+            toggleCard('quiz-container');
             document.getElementById('quiz-content').classList.remove('hidden');
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.add('hidden');
+
             const q = quizData[currentIndex];
             document.getElementById('feedback-area').classList.add('hidden');
             document.getElementById('progress-bar').style.width = `${(currentIndex/quizData.length)*100}%`;
@@ -258,134 +256,110 @@
             const optDiv = document.getElementById('options'); optDiv.innerHTML = '';
             q.options.forEach((opt, i) => {
                 const b = document.createElement('button');
-                b.className = "option-btn w-full text-left p-4 rounded-xl border-2 border-slate-100 transition-all font-medium bg-white hover:border-blue-200 shadow-sm";
+                b.className = "option-btn w-full text-left p-4 rounded-xl border-2 border-slate-100 bg-white font-medium";
                 b.innerText = opt;
                 b.onclick = () => {
                     document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
                     const isCorrect = (i === q.answer);
-                    const area = document.getElementById('feedback-area');
-                    const txt = document.getElementById('feedback-text');
-                    if(isCorrect) {
-                        score++; playSound('correct'); b.classList.add('border-green-500', 'bg-green-50');
-                        txt.innerHTML = "✨ Richtig!"; txt.className = "text-green-600 font-bold";
-                        area.className = "mt-8 p-6 rounded-2xl border-2 border-green-100 bg-green-50 animate-slideIn";
-                    } else {
-                        playSound('wrong'); userMistakes.push({q: q.question, g: opt, c: q.options[q.answer]});
-                        b.classList.add('border-red-500', 'bg-red-50');
-                        document.querySelectorAll('.option-btn')[q.answer].classList.add('border-green-400', 'bg-green-50');
-                        txt.innerHTML = `❌ Falsch. Richtig ist:<br><span class="text-slate-700 font-medium">${q.options[q.answer]}</span>`;
-                        txt.className = "text-red-600 font-bold";
-                        area.className = "mt-8 p-6 rounded-2xl border-2 border-red-100 bg-red-50 animate-slideIn";
-                    }
-                    area.classList.remove('hidden');
+                    if(isCorrect) { score++; playSound('correct'); b.classList.add('border-green-500', 'bg-green-50'); }
+                    else { playSound('wrong'); userMistakes.push({q: q.question, g: opt, c: q.options[q.answer]}); b.classList.add('border-red-500', 'bg-red-50'); }
+                    document.getElementById('feedback-area').classList.remove('hidden');
+                    document.getElementById('feedback-text').innerText = isCorrect ? "✨ Richtig!" : `❌ Falsch. Richtig: ${q.options[q.answer]}`;
                     document.getElementById('next-q-btn').onclick = () => { currentIndex++; (currentIndex < quizData.length) ? showQuestion() : showRes(); };
                 };
                 optDiv.appendChild(b);
             });
         }
 
-        // --- Mini Game Engine ---
-        function startMiniGame() { 
-            document.getElementById('quiz-content').classList.add('hidden'); 
-            document.getElementById('game-screen').classList.remove('hidden'); 
-            backToGameSelection(); 
-        }
-        function backToGameSelection() { 
-            gameActive = false; clearInterval(gameInterval); 
-            document.getElementById('game-selection').classList.remove('hidden'); 
-            document.getElementById('active-game-area').classList.add('hidden'); 
-        }
-        
-        function setupGame(type) {
-            currentGame = type; gameActive = true; gamePoints = 0;
-            document.getElementById('game-score').innerText = "0 / 10";
-            document.getElementById('game-selection').classList.add('hidden');
-            document.getElementById('active-game-area').classList.remove('hidden');
-            const canvas = document.getElementById('game-canvas'), ctx = canvas.getContext('2d');
-            let particles = [], enemies = [], obj = { x: 150, y: 150, r: 25, vX: 2, vY: 2, angle: 0 };
+        // --- All-In-One Game Engine ---
+        function setupGame(type, canvasId) {
+            gameActive = true; gamePoints = 0;
+            const scoreDisplay = canvasId === 'home-canvas' ? 'home-game-score' : 'game-score';
+            document.getElementById(scoreDisplay).innerText = "0 / 10";
             
-            // Maus-Tracking
+            if(canvasId === 'game-canvas') {
+                document.getElementById('quiz-game-selection').classList.add('hidden');
+                document.getElementById('active-game-area').classList.remove('hidden');
+            }
+
+            const canvas = document.getElementById(canvasId), ctx = canvas.getContext('2d');
+            let particles = [], enemies = [], mouse = { x: 150, y: 150 };
+            let targetX = 150, targetY = 150, targetR = 25;
+
             canvas.onpointermove = (e) => {
                 const r = canvas.getBoundingClientRect();
-                obj.x = e.clientX - r.left; obj.y = e.clientY - r.top;
+                mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
             };
-
-            function createExplosion(x, y, color) { for(let i=0; i<8; i++) particles.push({x, y, vX: (Math.random()-0.5)*10, vY: (Math.random()-0.5)*10, life: 1, color}); }
 
             canvas.onpointerdown = (e) => {
-                const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
-                // Clicker-Logik
-                if (currentGame === 'clicker') {
-                    const d = Math.sqrt((mx - targetX)**2 + (my - targetY)**2);
-                    if(d < 35) { createExplosion(targetX, targetY, '#fbbf24'); playSound('point'); updateScore(1); targetX = Math.random()*240+30; targetY = Math.random()*240+30; }
-                }
-                // Grower-Logik
-                if (currentGame === 'grower') {
-                    const d = Math.sqrt((mx - targetX)**2 + (my - targetY)**2);
-                    if(d < targetR) { targetR += 12; if(targetR > 75) { createExplosion(targetX, targetY, '#3b82f6'); playSound('point'); updateScore(1); targetR = 25; targetX = Math.random()*200+50; targetY = Math.random()*200+50; } }
-                }
+                const d = Math.sqrt((mouse.x - targetX)**2 + (mouse.y - targetY)**2);
+                if (type === 'clicker' && d < 35) { playSound('point'); updateScore(1, scoreDisplay); targetX = Math.random()*240+30; targetY = Math.random()*240+30; }
+                if (type === 'grower' && d < targetR) { targetR += 15; if(targetR > 70) { playSound('point'); updateScore(1, scoreDisplay); targetR = 25; targetX = Math.random()*200+50; targetY = Math.random()*200+50; } }
             };
-
-            let targetX = 150, targetY = 150, targetR = 25;
 
             gameInterval = setInterval(() => {
                 if(!gameActive) return;
                 ctx.clearRect(0,0,300,300);
-
-                // Partikel
-                particles.forEach((p, i) => { p.x += p.vX; p.y += p.vY; p.life -= 0.05; if(p.life <= 0) particles.splice(i, 1); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill(); });
-                ctx.globalAlpha = 1;
-
-                // NEU: Visueller Fokus-Halo für die Maus (Sichtbarkeit)
-                ctx.beginPath(); ctx.arc(obj.x, obj.y, 15, 0, Math.PI*2);
-                ctx.fillStyle = "rgba(59, 130, 246, 0.15)"; ctx.fill();
+                
+                // Halo Effekt
+                ctx.beginPath(); ctx.arc(mouse.x, mouse.y, 15, 0, Math.PI*2);
+                ctx.fillStyle = "rgba(59, 130, 246, 0.2)"; ctx.fill();
 
                 ctx.font = "40px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
-                if (currentGame === 'clicker') {
-                    ctx.fillText("⭐", targetX, targetY);
-                }
-                else if (currentGame === 'catcher') {
-                    targetY += 5; if(targetY > 320) { targetY = -20; targetX = Math.random()*260+20; }
+                if (type === 'clicker') ctx.fillText("⭐", targetX, targetY);
+                if (type === 'catcher') {
+                    targetY += 4; if(targetY > 320) { targetY = -20; targetX = Math.random()*260+20; }
                     ctx.fillText("🍎", targetX, targetY);
-                    if(Math.abs(obj.x - targetX) < 35 && Math.abs(obj.y - targetY) < 35) { createExplosion(targetX, targetY, '#ef4444'); playSound('point'); updateScore(1); targetY = -50; targetX = Math.random()*260+20; }
+                    if(Math.abs(mouse.x - targetX) < 35 && Math.abs(mouse.y - targetY) < 35) { playSound('point'); updateScore(1, scoreDisplay); targetY = -50; targetX = Math.random()*260+20; }
                 }
-                else if (currentGame === 'dodger') {
-                    ctx.fillText("🛸", obj.x, obj.y);
-                    if(Math.random() < 0.05) enemies.push({x: Math.random()*300, y: -20, vY: Math.random()*3+2});
+                if (type === 'dodger') {
+                    ctx.fillText("🛸", mouse.x, mouse.y);
+                    if(Math.random() < 0.05) enemies.push({x: Math.random()*300, y: -20});
                     enemies.forEach((en, i) => {
-                        en.y += en.vY; ctx.fillText("☄️", en.x, en.y);
-                        if(Math.sqrt((en.x-obj.x)**2 + (en.y-obj.y)**2) < 30) { gamePoints = Math.max(0, gamePoints - 0.5); createExplosion(obj.x, obj.y, '#f87171'); }
+                        en.y += 3; ctx.fillText("☄️", en.x, en.y);
+                        if(Math.sqrt((en.x-mouse.x)**2 + (en.y-mouse.y)**2) < 30) { gamePoints = Math.max(0, gamePoints - 0.2); }
                         if(en.y > 320) enemies.splice(i, 1);
                     });
-                    updateScore(0.03);
+                    updateScore(0.02, scoreDisplay);
                 }
-                else if (currentGame === 'grower') { 
-                    ctx.fillText("🫧", targetX, targetY); 
-                    ctx.beginPath(); ctx.arc(targetX, targetY, targetR, 0, Math.PI*2); ctx.strokeStyle = "#60a5fa"; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); 
+                if (type === 'grower') {
+                    ctx.fillText("🫧", targetX, targetY);
+                    ctx.beginPath(); ctx.arc(targetX, targetY, targetR, 0, Math.PI*2); ctx.strokeStyle = "#3b82f6"; ctx.lineWidth = 2; ctx.stroke();
                 }
             }, 1000/60);
         }
 
-        function updateScore(p) {
-            gamePoints += p; document.getElementById('game-score').innerText = `${Math.floor(gamePoints)} / 10`;
-            if (gamePoints >= 10) { gameActive = false; clearInterval(gameInterval); setTimeout(() => showQuestion(), 600); }
+        function updateScore(p, displayId) {
+            gamePoints += p;
+            document.getElementById(displayId).innerText = `${Math.floor(gamePoints)} / 10`;
+            if (gamePoints >= 10) {
+                gameActive = false;
+                clearInterval(gameInterval);
+                if(displayId === 'home-game-score') { setTimeout(closeHomeGame, 800); }
+                else { setTimeout(showQuestion, 800); }
+            }
         }
 
-        // --- Auswertung ---
         function showRes() {
             document.getElementById('quiz-content').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
-            const percent = Math.round(score/quizData.length*100);
-            document.getElementById('score-display').innerText = `${score} von ${quizData.length} richtig (${percent}%)`;
-            document.getElementById('mistake-analysis').innerHTML = userMistakes.length ? userMistakes.map(m => `<div class="p-3 bg-white border border-slate-200 rounded-xl text-xs shadow-sm"><p class="font-bold mb-1">${m.q}</p><p class="text-red-500">❌ Wahl: ${m.g}</p><p class="text-green-600">✅ Lösung: ${m.c}</p></div>`).join('') : '<p class="text-green-600 font-bold italic">Perfekt! Alles richtig. 🌟</p>';
-            const h = JSON.parse(localStorage.getItem('quiz_history') || '[]'); h.unshift({d: new Date().toLocaleDateString(), p: percent});
+            const p = Math.round(score/quizData.length*100);
+            document.getElementById('score-display').innerText = `${score} von ${quizData.length} (${p}%)`;
+            const h = JSON.parse(localStorage.getItem('quiz_history') || '[]'); h.unshift({d: new Date().toLocaleDateString(), p});
             localStorage.setItem('quiz_history', JSON.stringify(h.slice(0,10))); renderHistory();
         }
-        function renderHistory() { const h = JSON.parse(localStorage.getItem('quiz_history') || '[]'); document.getElementById('history-list').innerHTML = h.map(e => `<div class="history-card bg-white p-3 rounded-lg border flex justify-between items-center text-sm shadow-sm"><span class="text-slate-400 text-[10px]">${e.d}</span><span class="font-bold text-blue-600">${e.p}%</span></div>`).join('') || '<p class="text-center text-slate-400 text-xs italic">Kein Verlauf.</p>'; }
-        function exportCSV() { let csv = "\uFEFFFrage;Option A;Option B;Option C;Option D;Antwort\n"; quizData.forEach(q => { csv += `"${q.question}";${q.options.map(o => `"${o}"`).join(';')};"${q.options[q.answer]}"\n`; }); window.open(URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}))); }
-        function clearHistory() { if(confirm("Löschen?")) { localStorage.removeItem('quiz_history'); renderHistory(); } }
-        const toBase64 = f => new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); r.onerror = rej; });
+
+        function renderHistory() {
+            const h = JSON.parse(localStorage.getItem('quiz_history') || '[]');
+            document.getElementById('history-list').innerHTML = h.map(e => `<div class="bg-white p-3 rounded-lg border flex justify-between text-sm shadow-sm"><span>${e.d}</span><span class="font-bold text-blue-600">${e.p}%</span></div>`).join('') || '<p class="text-slate-400 text-xs italic">Kein Verlauf.</p>';
+        }
+
+        const toBase64 = f => new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); });
+        function handleDragOver(e) { e.preventDefault(); }
+        function handleDrop(e) { e.preventDefault(); document.getElementById('pdf-file').files = e.dataTransfer.files; document.getElementById('file-name').innerText = e.dataTransfer.files[0].name; }
+        function handleDragOverCSV(e) { e.preventDefault(); }
+        function handleDropCSV(e) { e.preventDefault(); importCSV(e.dataTransfer.files); }
         window.onload = renderHistory;
     </script>
 </body>
