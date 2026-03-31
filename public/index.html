@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Master Pro 2.7.5 - ZOLL Edition</title>
+    <title>AI Quiz Master Pro 2.8.0 - ZOLL Edition</title>
     <link rel="icon" href="https://fav.farm/🧠" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -21,6 +21,19 @@
         .option-btn:disabled { opacity: 0.8; cursor: not-allowed; }
 		#pdf-preview-box { transition: all 0.3s ease; max-height: 200px; overflow: hidden; }
         .mistake-card { animation: slideIn 0.3s ease-out; border-left-width: 4px; }
+		
+		<!--Aussehen Spiel Startseite-->
+		#home-canvas { 
+			width: 300px;  /* Von 150px auf 300px erhöht */
+			height: 300px; /* Von 150px auf 300px erhöht */
+			background: #ffffff; 
+			border-radius: 1.5rem; /* Abrundung an Quiz-Canvas angepasst */
+			border: 4px solid #e2e8f0; /* Rahmendicke an Quiz-Canvas angepasst */
+			display: block;
+			margin: 0 auto;
+			touch-action: none;
+		}
+		
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900 pb-20">
@@ -30,7 +43,7 @@
 			<div class="flex justify-center mb-2 pt-4">
                 <button onclick="toggleMute()" id="mute-btn" class="p-2 bg-white border border-slate-200 rounded-lg shadow-sm text-xl hover:bg-slate-100 transition-all">🔊</button>
 			</div>
-            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">🧠 AI Quiz Master 2.7.5 </h1>
+            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">🧠 AI Quiz Master 2.8.0 </h1>
             <p class="text-slate-500 italic font-bold">Lernen mit System & Spielspaß ©ZOLL-Rentner</p>
         </div>
 
@@ -54,6 +67,7 @@
                             <option value="PDF">📄 PDF analysieren (KI)</option>
                             <option value="CSV">📂 CSV laden (Import)</option>
                             <option value="TEMPLATE">📚 Vorlagen laden (Server)</option>
+							<option value="TRAINING">🎮 Trainings-Zone (Minispiele)</option> </select>
                         </select>
                     </div>
 
@@ -96,6 +110,43 @@
                             <span class="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">Starten →</span>
                         </button>
                     </div>
+					
+					<div id="section-training" class="hidden animate-slideIn flex flex-col items-center">
+					<div class="w-[300px] bg-blue-600 p-2 rounded-t-2xl mb-2 flex justify-between items-center shadow-md">
+						<h3 class="text-white font-bold text-[10px]">Training</h3>
+						<span id="home-game-score" class="text-white font-mono font-bold text-[10px] bg-white/20 px-1.5 py-0.5 rounded">0/10</span>
+					</div>
+
+					<div id="home-game-selection" class="grid grid-cols-2 gap-1.5 w-[300px]">
+						<button onclick="setupGame('horse', 'home-canvas')" class="p-2 border-2 rounded-xl bg-white hover:border-blue-500 transition-all flex flex-col items-center shadow-sm">
+							<span class="text-xl">🐎</span>
+							<span class="text-[8px] font-bold uppercase">Pferd</span>
+						</button>
+						<button onclick="setupGame('catcher', 'home-canvas')" class="p-2 border-2 rounded-xl bg-white hover:border-blue-500 transition-all flex flex-col items-center shadow-sm">
+							<span class="text-xl">🍎</span>
+							<span class="text-[8px] font-bold uppercase">Fänger</span>
+						</button>
+						<button onclick="setupGame('dodger', 'home-canvas')" class="p-2 border-2 rounded-xl bg-white hover:border-blue-500 transition-all flex flex-col items-center shadow-sm">
+							<span class="text-xl">🛸</span>
+							<span class="text-[8px] font-bold uppercase">Ufo</span>
+						</button>
+						<button onclick="setupGame('grower', 'home-canvas')" class="p-2 border-2 rounded-xl bg-white hover:border-blue-500 transition-all flex flex-col items-center shadow-sm">
+							<span class="text-xl">🫧</span>
+							<span class="text-[8px] font-bold uppercase">Blase</span>
+						</button>
+					</div>
+
+					<div id="home-active-game" class="hidden flex flex-col items-center">
+						<div class="relative bg-slate-50 rounded-2xl p-1 border border-slate-200 shadow-inner">
+							<canvas id="home-canvas" width="300" height="300"></canvas>
+						</div>
+							<button onclick="showHomeGameSelection()" class="mt-4 w-full py-3 bg-slate-800 text-white rounded-lg text-sm font-bold uppercase tracking-tighter">
+								↩️ Wechseln
+							</button>
+						</div>
+					</div>
+				</div>
+					
                 </div>
             </div>
         </div>
@@ -175,6 +226,14 @@
 
 		function toggleMute() { isMuted = !isMuted; localStorage.setItem('quiz_muted', isMuted); updateMuteUI(); }
 		function updateMuteUI() { const btn = document.getElementById('mute-btn'); if (btn) btn.innerText = isMuted ? '🔇' : '🔊'; }
+		
+		
+		function showHomeGameSelection() {
+			gameActive = false;
+			clearInterval(gameInterval);
+			document.getElementById('home-game-selection').classList.remove('hidden');
+			document.getElementById('home-active-game').classList.add('hidden');
+		}
 
         async function previewPDF(input) {
             const file = input.files[0]; if (!file || file.type !== "application/pdf") return;
@@ -196,6 +255,11 @@
 
         // --- Games Logic ---
 				function setupGame(type, canvasId) {
+				
+				if(canvasId === 'home-canvas') {
+					document.getElementById('home-game-selection').classList.add('hidden');
+					document.getElementById('home-active-game').classList.remove('hidden');
+				}
 			gameActive = true; 
 			gamePoints = 0;
 			const scoreDisplay = canvasId === 'home-canvas' ? 'home-game-score' : 'game-score';
@@ -562,6 +626,13 @@
             document.getElementById('section-pdf').classList.toggle('hidden', this.value !== 'PDF'); 
             document.getElementById('section-csv').classList.toggle('hidden', this.value !== 'CSV'); 
             document.getElementById('section-template').classList.toggle('hidden', this.value !== 'TEMPLATE'); 
+			document.getElementById('section-training').classList.toggle('hidden', this.value !== 'TRAINING'); // NEU
+			
+			// Falls ein Spiel auf dem Home-Canvas läuft, stoppen wenn man den Modus wechselt
+			if(val !== 'TRAINING') {
+				gameActive = false;
+				clearInterval(gameInterval);
+			}
         };
 
         const toBase64 = f => new Promise((res) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); });
