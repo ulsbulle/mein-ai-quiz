@@ -356,6 +356,7 @@
 					target.y += 4;
 					if(target.y > 320) { target.y = -20; target.x = Math.random()*260+20; }
 					ctx.fillText("🍎", target.x, target.y);
+					ctx.fillStyle = "#e2e8f0";
 					if(Math.abs(mouse.x - target.x) < 35 && Math.abs(mouse.y - target.y) < 35) {
 						playSound('point');
 						updateScore(1, scoreDisplay);
@@ -367,6 +368,7 @@
 				// --- MODUS: UFO (Dodger) ---
 				if (type === 'dodger') {
 					ctx.fillText("🛸", mouse.x, mouse.y);
+					ctx.fillStyle = "#e2e8f0";
 					if(Math.random() < 0.05) objects.push({x: Math.random()*300, y: -20});
 					objects.forEach((en, i) => {
 						en.y += 4;
@@ -382,6 +384,7 @@
 				// --- MODUS: BLASE (Grower) ---
 				if (type === 'grower') {
 					ctx.fillText("🫧", target.x, target.y);
+					ctx.fillStyle = "#e2e8f0";
 					ctx.beginPath();
 					ctx.arc(target.x, target.y, target.r, 0, Math.PI*2);
 					ctx.strokeStyle = "#2563eb";
