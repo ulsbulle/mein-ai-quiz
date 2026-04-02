@@ -334,9 +334,14 @@ function handleDrop(e) { e.preventDefault(); document.getElementById('pdf-file')
 function handleDragOverCSV(e) { e.preventDefault(); }
 function handleDropCSV(e) { e.preventDefault(); importCSV(e.dataTransfer.files); }
 
+//CSV-DROP verlassen
+function handleDragLeaveCSV(e) { 
+    e.preventDefault(); 
+}
+
+
+
 // Initialisierung beim Laden
-
-
 window.onload = () => {
 	// Setzt das Dropdown beim Laden explizit auf PDF
 	const modusSelect = document.getElementById('Modus');
