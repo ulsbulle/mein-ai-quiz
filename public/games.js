@@ -4,7 +4,22 @@ let gameActive = false;
 let gameDone = false;
 let gameInterval;
 
-// --- Minispiele Logik ---
+//Hilfsfunktionen//
+/** --- SPIELE ENGINE (CANVAS) Hauptmenu --- **/		
+function showHomeGameSelection() {
+	gameActive = false;
+	clearInterval(gameInterval);
+	document.getElementById('home-game-selection').classList.remove('hidden');
+	document.getElementById('home-active-game').classList.add('hidden');
+}
+
+// Score im Spiel aktualisieren
+function updateScore(p, displayId) {
+    gamePoints += p; document.getElementById(displayId).innerText = `${Math.floor(gamePoints)} / 10`;
+    if (gamePoints >= 10) { gameActive = false; clearInterval(gameInterval); setTimeout(() => (displayId === 'home-game-score' ? showHomeGameSelection() : showQuestion()), 800); }
+}
+
+// --- Minispiele Logik (Haupt-Logik)---
 function setupGame(type, canvasId) {
 	// UI-Reset für Spielstart
 	if(canvasId === 'home-canvas') {
@@ -63,13 +78,7 @@ function setupGame(type, canvasId) {
 		}
 	};
 	
-	/** --- SPIELE ENGINE (CANVAS) Hauptmenu --- **/		
-function showHomeGameSelection() {
-	gameActive = false;
-	clearInterval(gameInterval);
-	document.getElementById('home-game-selection').classList.remove('hidden');
-	document.getElementById('home-active-game').classList.add('hidden');
-}
+
 
 // Main Game Loop (60 FPS)
 	gameInterval = setInterval(() => {
@@ -187,10 +196,4 @@ function showHomeGameSelection() {
 		ctx.globalCompositeOperation = 'source-over';
 
 	}, 1000/60);
-}
-
-// Score im Spiel aktualisieren
-function updateScore(p, displayId) {
-    gamePoints += p; document.getElementById(displayId).innerText = `${Math.floor(gamePoints)} / 10`;
-    if (gamePoints >= 10) { gameActive = false; clearInterval(gameInterval); setTimeout(() => (displayId === 'home-game-score' ? showHomeGameSelection() : showQuestion()), 800); }
 }
