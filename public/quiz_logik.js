@@ -426,7 +426,7 @@ async function loadDownloadFiles() {
         // 2. Vorlagen-Bereich füllen (Nur .csv Dateien)
         const csvFiles = files.filter(f => f.endsWith('.csv'));
         templateList.innerHTML = csvFiles.map(file => `
-            <button onclick="loadTemplate('templates/${file}')" class="w-full p-4 border-2 rounded-xl bg-white hover:border-blue-500 hover:bg-blue-50 text-left font-bold transition-all flex justify-between items-center group">
+            <button onclick="loadTemplate('/templates/${file}')" class="w-full p-4 border-2 rounded-xl bg-white hover:border-blue-500 hover:bg-blue-50 text-left font-bold transition-all flex justify-between items-center group">
                 <span>📄 ${file.replace('.csv', '')}</span>
                 <span class="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">Starten →</span>
             </button>
