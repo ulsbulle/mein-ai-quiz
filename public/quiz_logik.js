@@ -375,26 +375,40 @@ function handleDragLeaveCSV(e) {
 //Downloadbereich Offline
 async function loadDownloadFiles() {
     const listElement = document.getElementById('file-list');
+    
+    if (!listElement) {
+        console.error("Fehler: Element mit ID 'file-list' wurde im HTML nicht gefunden!");
+        return;
+    }
+
     try {
         const response = await fetch('/api/files');
         const files = await response.json();
 
-        if (files.length === 0) {
-            listElement.innerHTML = '<li class="text-slate-400 text-sm">Keine Dateien verfügbar.</li>';
+        console.log("Dateien vom Server erhalten:", files);
+
+        if (!files || files.length === 0) {
+            listElement.innerHTML = '<li class="text-slate-400 text-sm italic p-2">Keine Dateien im Download-Ordner gefunden.</li>';
             return;
         }
 
-        listElement.innerHTML = files.map(file => `
-            <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors group">
+        // HTML generieren
+        const html = files.map(file => `
+            <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors border border-slate-100">
                 <span class="text-slate-700 font-medium truncate">${file}</span>
                 <a href="/downloads/${file}" download 
-                   class="bg-blue-100 text-blue-600 px-3 py-1 rounded-md text-xs font-bold hover:bg-blue-600 hover:text-white transition-all">
+                   class="bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-bold hover:bg-blue-700 transition-all shadow-sm">
                    Laden ↓
                 </a>
             </li>
         `).join('');
+
+        listElement.innerHTML = html;
+        console.log("Liste wurde erfolgreich befüllt.");
+
     } catch (error) {
-        listElement.innerHTML = '<li class="text-red-400 text-sm">Fehler beim Laden der Liste.</li>';
+        console.error("Fehler beim Laden der Dateiliste:", error);
+        listElement.innerHTML = '<li class="text-red-400 text-sm p-2">Fehler beim Laden der Liste.</li>';
     }
 }
 
