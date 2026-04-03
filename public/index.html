@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Master Pro 3.0.0 - ZOLL Edition</title>
+    <title>AI Quiz Master Pro 3.0.1 - ZOLL Edition</title>
     <link rel="icon" href="https://fav.farm/🧠" />
 	<link rel="stylesheet" href="style.css">
 
@@ -22,7 +22,7 @@
 		
 	<!--Überschrift-->
         <div class="bg-slate-50 text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">🧠 AI Quiz Master 3.0.0 🧠 </h1>
+            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">🧠 AI Quiz Master 3.0.1 🧠 </h1>
             <p class="text-slate-500 italic font-bold">Lernen mit System & Spielspaß ©ZOLL-Rentner</p>
         </div>
 
@@ -50,6 +50,7 @@
                             <option value="CSV">📂 CSV laden (Import)</option>
                             <option value="TEMPLATE">📚 Vorlagen laden (Server)</option>
 							<option value="TRAINING">🎮 Trainings-Zone (Minispiele)</option>
+							<option value="DOWLOADS">📂 Downloads (Vorlagen und Offlineversion)</option>
                         </select>
                     </div>
 
@@ -99,6 +100,19 @@
                             <span>⛽ Verbrauchsteuern (10 Fragen)</span>
                             <span class="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">Starten →</span>
                         </button>
+                    </div>
+					
+				<!--Wenn DOWNLOADS ausgewählt wurde-->
+                    <div id="DOWLOADS" class="hidden animate-slideIn">
+					<!--Schaltfläche um die CSV zu wählen bzw. hineinzuziehen-->
+                        <div id="download-section" class="mt-12 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+							<h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+								📂 Verfügbare Lernmaterialien (Download)
+							</h3>
+							<ul id="file-list" class="space-y-2">
+								<li class="text-slate-400 text-sm italic">Lade Dateiliste...</li>
+							</ul>
+						</div>
                     </div>
 					
 				<!--Wenn Training ausgewählt wurde-->
