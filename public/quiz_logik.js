@@ -408,7 +408,7 @@ window.onload = () => {
 	modusSelect.value = 'PDF';
 	
 	//Downloadbereich
-	window.addEventListener('load', loadDownloadFiles);
+	loadDownloadFiles(); // Einfach direkt hier aufrufen
 	
 	// Stellt sicher, dass die richtigen Sektionen (PDF ein, Rest aus) angezeigt werden
 	document.getElementById('section-pdf').classList.remove('hidden');
