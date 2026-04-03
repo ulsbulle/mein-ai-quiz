@@ -361,7 +361,11 @@ function clearHistory() { localStorage.removeItem('quiz_history'); renderHistory
 
 
 
-	document.getElementById('Modus').onchange = function() { 
+	document.getElementById('Modus').onchange = function() {
+	
+	//aktuelle Wahl
+	const val = this.value;
+	
     document.getElementById('section-pdf').classList.toggle('hidden', this.value !== 'PDF'); 
     document.getElementById('section-csv').classList.toggle('hidden', this.value !== 'CSV'); 
     document.getElementById('section-template').classList.toggle('hidden', this.value !== 'TEMPLATE'); 
