@@ -372,8 +372,8 @@ function clearHistory() { localStorage.removeItem('quiz_history'); renderHistory
 	document.getElementById('section-training').classList.toggle('hidden', this.value !== 'TRAINING'); // NEU
 	document.getElementById('section-downloads').classList.toggle('hidden', this.value !== 'DOWNLOADS');
 	
-	// Wenn Downloads gewählt wurde, Liste neu laden
-    if(val === 'DOWNLOADS') {
+	// Liste laden, wenn Downloads ODER Vorlagen gewählt werden
+    if(val === 'DOWNLOADS' || val === 'TEMPLATE') {
         loadDownloadFiles();
     }
 	
@@ -399,16 +399,20 @@ function handleDragLeaveCSV(e) {
 //Downloadbereich Offline
 async function loadDownloadFiles() {
     const listElement = document.getElementById('file-list');
+	const templateList = document.getElementById('template-list');
+	
     try {
         const response = await fetch('/api/files');
         const files = await response.json();
 
-        if (files.length === 0) {
-            listElement.innerHTML = '<li class="text-slate-400 text-sm">Keine Dateien verfügbar.</li>';
+		if (!files || files.length === 0) {
+            if(downloadList) downloadList.innerHTML = '<li class="text-slate-400 text-sm">Keine Dateien verfügbar.</li>';
+            if(templateList) templateList.innerHTML = '<p class="text-slate-400 text-sm italic">Keine Vorlagen gefunden.</p>';
             return;
         }
 
-        listElement.innerHTML = files.map(file => `
+		// 1. Download-Bereich füllen (Alle Dateien)
+        downloadList.innerHTML = files.map(file => `
             <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors group">
                 <span class="text-slate-700 font-medium truncate">${file}</span>
                 <a href="/downloads/${file}" download 
@@ -417,8 +421,19 @@ async function loadDownloadFiles() {
                 </a>
             </li>
         `).join('');
+
+        // 2. Vorlagen-Bereich füllen (Nur .csv Dateien)
+        const csvFiles = files.filter(f => f.endsWith('.csv'));
+        templateList.innerHTML = csvFiles.map(file => `
+            <button onclick="loadTemplate('templates/${file}')" class="w-full p-4 border-2 rounded-xl bg-white hover:border-blue-500 hover:bg-blue-50 text-left font-bold transition-all flex justify-between items-center group">
+                <span>📄 ${file.replace('.csv', '')}</span>
+                <span class="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">Starten →</span>
+            </button>
+        `).join('');
+
     } catch (error) {
-        listElement.innerHTML = '<li class="text-red-400 text-sm">Fehler beim Laden der Liste.</li>';
+        console.error("Fehler beim Laden der Dateien:", error);
+        if(downloadList) downloadList.innerHTML = '<li class="text-red-400 text-sm">Fehler beim Laden der Liste.</li>';
     }
 }
 
