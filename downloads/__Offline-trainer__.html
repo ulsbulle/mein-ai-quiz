@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quiz Master Offline - ZOLL Edition</title>
+    <link rel="icon" href="https://fav.farm/🧠" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #progress-bar { transition: width 0.4s ease-in-out; }
+        #game-canvas, #home-canvas { 
+            cursor: none; background: #ffffff; border-radius: 1.5rem; 
+            border: 4px solid #e2e8f0; touch-action: none; 
+        }
+        .animate-slideIn { animation: slideIn 0.4s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .option-btn:disabled { opacity: 0.8; cursor: not-allowed; }
+        #home-canvas { width: 300px; height: 300px; display: block; margin: 0 auto; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-900 pb-20">
+
+    <div class="max-w-2xl mx-auto py-10 px-4">
+        <div class="sticky top-0 flex justify-center mb-2 pt-4 z-50">
+            <button onclick="toggleMute()" id="mute-btn" class="p-2 bg-white border border-slate-200 rounded-lg shadow-sm text-xl hover:bg-slate-100 transition-all">🔊</button>
+        </div>
+
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">🧠 Quiz Master OFFLINE 🧠</h1>
+            <p class="text-slate-500 italic font-bold">Lernen ohne Internet & Server ©ZOLL-Rentner</p>
+        </div>
+
+        <div id="setup-card" class="space-y-6">
+            <div class="bg-white shadow-xl rounded-2xl p-8 border border-slate-200">
+                <div class="space-y-6">
+                    <div class="bg-blue-50 p-5 rounded-xl border border-blue-100">
+                        <label class="block text-base font-bold text-blue-800 mb-2 underline">Offline-Anleitung:</label>
+                        <ul class="text-sm text-blue-900 space-y-1 list-disc ml-5 font-medium">
+                            <li>Nutze <b>CSV laden</b> um eigene Fragenkataloge zu importieren.</li>
+                            <li>Die <b>Trainings-Zone</b> funktioniert jederzeit ohne Daten.</li>
+                            <li>Keine Serververbindung nötig.</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-4 bg-white rounded-xl border border-slate-200">
+                        <label for="Modus" class="block text-sm font-bold text-slate-700 mb-2">Modus wählen:</label>
+                        <select id="Modus" class="w-full p-3 rounded-lg border-2 border-blue-100 focus:border-blue-500 outline-none font-medium">
+                            <option value="CSV" selected>📂 CSV laden (Lokal)</option>
+                            <option value="TRAINING">🎮 Trainings-Zone (Minispiele)</option>
+                        </select>
+                    </div>
+
+                    <div id="section-csv" class="animate-slideIn">
+                        <div id="drop-zone-csv" class="bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-2xl p-8 text-center cursor-pointer hover:bg-emerald-100 transition-all"
+                         onclick="document.getElementById('csv-import').click()" ondragover="handleDragOverCSV(event)" ondragleave="handleDragLeaveCSV(event)" ondrop="handleDropCSV(event)">
+                            <div class="text-4xl mb-3">📊</div>
+                            <p class="text-emerald-700 font-bold mb-4">CSV-Datei hierher ziehen oder klicken</p>
+                            <input type="file" id="csv-import" accept=".csv" class="hidden" onchange="importCSV(this)">
+                            <span class="bg-emerald-600 text-white py-2 px-6 rounded-xl font-bold">Datei wählen</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-2 text-center">Format: Frage;OptionA;OptionB;OptionC;OptionD;RichtigeOption</p>
+                    </div>
+
+                    <div id="section-training" class="hidden animate-slideIn flex flex-col items-center">
+                        <div class="w-[300px] bg-blue-600 p-2 rounded-t-2xl flex justify-between items-center shadow-md">
+                            <h3 class="text-white font-bold text-[10px]">Training</h3>
+                            <span id="home-game-score" class="text-white font-mono font-bold text-[10px] bg-white/20 px-1.5 py-0.5 rounded">0/10</span>
+                        </div>
+                        <div id="home-game-selection" class="grid grid-cols-2 gap-1.5 w-[300px] mt-2">
+                            <button onclick="setupGame('horse', 'home-canvas')" class="p-2 border-2 rounded-xl bg-white hover:border-blue-500 transition-all flex flex-col items-center"><span class="text-xl">🐎</span><span class="text-[8px] font-bold">PFERDERENNEN</span></button>
+                            <button onclick="setupGame('catcher', 'home-canvas')" class="p-2 border-2 rounded-xl bg-white hover:border-blue-500 transition-all flex flex-col items-center"><span class="text-xl">🍎</span><span class="text-[8px] font-bold">APFELFÄNGER</span></button>
+                            <button onclick="setupGame('dodger', 'home-canvas')" class="p-2 border-2 rounded-xl bg-white hover:border-blue-500 transition-all flex flex-col items-center"><span class="text-xl">🛸</span><span class="text-[8px] font-bold">UFO-SPIEL</span></button>
+                            <button onclick="setupGame('grower', 'home-canvas')" class="p-2 border-2 rounded-xl bg-white hover:border-blue-500 transition-all flex flex-col items-center"><span class="text-xl">🫧</span><span class="text-[8px] font-bold">BLASEN-POP</span></button>
+                        </div>
+                        <div id="home-active-game" class="hidden">
+                            <canvas id="home-canvas" width="300" height="300"></canvas>
+                            <button onclick="showHomeGameSelection()" class="mt-4 w-full py-2 bg-slate-800 text-white rounded-lg text-xs font-bold uppercase">↩️ Wechseln</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="quiz-container" class="hidden bg-white shadow-2xl rounded-3xl p-8 border border-slate-200">
+            <div id="quiz-content">
+                <div class="w-full bg-slate-100 rounded-full h-2 mb-6"><div id="progress-bar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div></div>
+                <span id="q-count" class="text-[10px] font-bold text-blue-500 uppercase tracking-widest"></span>
+                <h2 id="question-text" class="text-xl font-bold text-slate-800 my-6"></h2>
+                <div id="options" class="space-y-3"></div>
+                <div id="feedback-area" class="hidden mt-8 p-6 rounded-2xl border-2 animate-slideIn text-center">
+                    <p id="feedback-text" class="text-lg font-bold mb-4"></p>
+                    <button id="next-q-btn" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl">Nächste Frage →</button>
+                </div>
+            </div>
+
+            <div id="game-screen" class="hidden text-center py-4">
+                <h2 class="text-2xl font-black text-blue-600 mb-6 uppercase italic">Spielpause! ⚡</h2>
+                <div id="quiz-game-selection" class="grid grid-cols-2 gap-3 mb-6">
+                    <button onclick="setupGame('horse', 'game-canvas')" class="p-4 border-2 rounded-2xl bg-white hover:border-blue-500 font-bold">🐎 Pferderennen</button>
+                    <button onclick="setupGame('catcher', 'game-canvas')" class="p-4 border-2 rounded-2xl bg-white hover:border-emerald-500 font-bold">🍎 Apfelfänger</button>
+                </div>
+                <div id="active-game-area" class="hidden">
+                    <canvas id="game-canvas" width="300" height="300" class="mx-auto"></canvas>
+                    <div id="game-score" class="mt-4 font-black text-blue-600 text-4xl italic">0 / 10</div>
+                </div>
+            </div>
+
+            <div id="result-screen" class="hidden text-center py-6">
+                <div class="text-6xl mb-4 text-green-500">🏆</div>
+                <h2 class="text-3xl font-bold mb-2">AUSWERTUNG</h2>
+                <p id="score-display" class="text-2xl text-blue-600 mb-8 font-black"></p>
+                <div id="mistake-analysis" class="mb-8 space-y-3 text-left max-h-80 overflow-y-auto"></div>
+                <button onclick="goToHome()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold">ZUM HAUPTMENÜ</button>
+            </div>
+        </div>
+
+        <div id="history-container" class="mt-12">
+            <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-widest mb-4">📊 Letzte Ergebnisse</h3>
+            <div id="history-list" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIK ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let quizData = [], currentIndex = 0, score = 0, userMistakes = [];
+        let gamePoints = 0, gameActive = false, gameDone = false, gameInterval;
+        let isMuted = localStorage.getItem('quiz_muted') === 'true';
+
+        function updateMuteUI() { document.getElementById('mute-btn').innerText = isMuted ? '🔇' : '🔊'; }
+        function toggleMute() { isMuted = !isMuted; localStorage.setItem('quiz_muted', isMuted); updateMuteUI(); }
+
+        function playSound(type) {
+            if (isMuted) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if (type === 'correct') { osc.frequency.setValueAtTime(523, audioCtx.currentTime); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
+            else if (type === 'wrong') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
+        }
+
+        // --- CSV IMPORT ---
+        function importCSV(source) {
+            const file = source.files ? source.files[0] : source[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => parseCSVData(e.target.result);
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function parseCSVData(text) {
+            try {
+                const lines = text.split(/\r?\n/).filter(l => l.trim()).slice(1);
+                quizData = lines.map(l => {
+                    // Simpler CSV Split (Semikolon)
+                    const c = l.split(';').map(s => s.replace(/^"|"$/g, '').trim());
+                    const opts = [c[1], c[2], c[3], c[4]];
+                    const correctText = c[5];
+                    shuffleArray(opts);
+                    return { question: c[0], options: opts, answer: opts.indexOf(correctText) };
+                }).filter(q => q.answer !== -1);
+                shuffleArray(quizData);
+                if(quizData.length === 0) throw new Error();
+                startQuiz();
+            } catch(e) { alert("CSV fehlerhaft! Format: Frage;A;B;C;D;Lösung"); }
+        }
+
+        function startQuiz() {
+            currentIndex = 0; score = 0; userMistakes = []; gameDone = false;
+            document.getElementById('setup-card').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentIndex >= quizData.length) { showRes(); return; }
+            
+            // Spielpause-Logik
+            if (currentIndex === Math.floor(quizData.length / 2) && !gameDone && quizData.length > 2) {
+                gameDone = true;
+                document.getElementById('quiz-content').classList.add('hidden');
+                document.getElementById('game-screen').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('quiz-content').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('feedback-area').classList.add('hidden');
+            
+            const q = quizData[currentIndex];
+            document.getElementById('progress-bar').style.width = `${(currentIndex / quizData.length) * 100}%`;
+            document.getElementById('q-count').innerText = `Frage ${currentIndex + 1} von ${quizData.length}`;
+            document.getElementById('question-text').innerText = q.question;
+            
+            const optDiv = document.getElementById('options');
+            optDiv.innerHTML = '';
+            q.options.forEach((opt, i) => {
+                const b = document.createElement('button');
+                b.className = "option-btn w-full text-left p-4 rounded-xl border-2 border-slate-100 bg-white font-medium hover:border-blue-300";
+                b.innerText = opt;
+                b.onclick = () => {
+                    document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                    const isCorrect = (i === q.answer);
+                    if (isCorrect) { score++; playSound('correct'); b.classList.add('border-green-500', 'bg-green-50'); }
+                    else { 
+                        userMistakes.push({ q: q.question, g: opt, c: q.options[q.answer] });
+                        playSound('wrong'); b.classList.add('border-red-500', 'bg-red-50');
+                        document.querySelectorAll('.option-btn')[q.answer].classList.add('border-green-500');
+                    }
+                    document.getElementById('feedback-area').classList.remove('hidden');
+                    document.getElementById('feedback-text').innerText = isCorrect ? "Richtig!" : "Leider falsch.";
+                    document.getElementById('next-q-btn').onclick = () => { currentIndex++; showQuestion(); };
+                };
+                optDiv.appendChild(b);
+            });
+        }
+
+        function showRes() {
+            document.getElementById('quiz-content').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('score-display').innerText = `${score} von ${quizData.length} richtig`;
+            const analysis = document.getElementById('mistake-analysis');
+            analysis.innerHTML = userMistakes.map(m => `
+                <div class="p-3 bg-white border-l-4 border-red-500 rounded shadow-sm text-xs">
+                    <p class="font-bold">${m.q}</p>
+                    <p class="text-red-500">Falsch: ${m.g}</p>
+                    <p class="text-green-600">Richtig: ${m.c}</p>
+                </div>`).join('');
+            
+            const h = JSON.parse(localStorage.getItem('quiz_history') || '[]');
+            h.unshift({d: new Date().toLocaleDateString(), p: Math.round((score/quizData.length)*100)});
+            localStorage.setItem('quiz_history', JSON.stringify(h.slice(0,5)));
+            renderHistory();
+        }
+
+        function goToHome() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('setup-card').classList.remove('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        function renderHistory() {
+            const h = JSON.parse(localStorage.getItem('quiz_history') || '[]');
+            document.getElementById('history-list').innerHTML = h.map(e => `
+                <div class="flex justify-between p-3 bg-white rounded border border-slate-100">
+                    <span class="text-sm">${e.d}</span>
+                    <span class="font-bold text-blue-600">${e.p}%</span>
+                </div>`).join('');
+        }
+
+        // --- GAME ENGINE (Minimal Copy) ---
+        function setupGame(type, canvasId) {
+            if(canvasId === 'home-canvas') {
+                document.getElementById('home-game-selection').classList.add('hidden');
+                document.getElementById('home-active-game').classList.remove('hidden');
+            } else {
+                document.getElementById('quiz-game-selection').classList.add('hidden');
+                document.getElementById('active-game-area').classList.remove('hidden');
+            }
+            gameActive = true; gamePoints = 0;
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            let mouse = {x:150, y:150};
+            canvas.onpointermove = (e) => { const r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; };
+            
+            gameInterval = setInterval(() => {
+                if(!gameActive) return;
+                ctx.clearRect(0,0,300,300);
+                ctx.font = "30px Arial";
+                ctx.fillText(type === 'horse' ? "🐎" : "🍎", mouse.x-15, mouse.y);
+                gamePoints += 0.05;
+                const scoreId = canvasId === 'home-canvas' ? 'home-game-score' : 'game-score';
+                document.getElementById(scoreId).innerText = Math.floor(gamePoints) + " / 10";
+                if(gamePoints >= 10) { 
+                    clearInterval(gameInterval); 
+                    gameActive = false; 
+                    setTimeout(() => canvasId === 'home-canvas' ? showHomeGameSelection() : showQuestion(), 500); 
+                }
+            }, 50);
+        }
+
+        function showHomeGameSelection() {
+            gameActive = false; clearInterval(gameInterval);
+            document.getElementById('home-game-selection').classList.remove('hidden');
+            document.getElementById('home-active-game').classList.add('hidden');
+        }
+
+        document.getElementById('Modus').onchange = function() {
+            document.getElementById('section-csv').classList.toggle('hidden', this.value !== 'CSV');
+            document.getElementById('section-training').classList.toggle('hidden', this.value !== 'TRAINING');
+        };
+
+        window.onload = () => { renderHistory(); updateMuteUI(); };
+
+        function handleDragOverCSV(e) { e.preventDefault(); }
+        function handleDropCSV(e) { e.preventDefault(); importCSV(e.dataTransfer.files); }
+    </script>
+</body>
+</html>
