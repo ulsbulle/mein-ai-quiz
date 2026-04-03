@@ -296,12 +296,12 @@ function goToHome() {
     document.getElementById('file-name').innerText = "PDF WÄHLEN / DROP";
     document.getElementById('pdf-file').value = "";
     document.getElementById('csv-import').value = "";
-	document.getElementById('download-section').classList.remove('hidden');
+	document.getElementById('section-downloads').classList.remove('hidden');
 }
 
 //Downlaod ausblenden
 function toggleDownloads(show) {
-    const downloadSection = document.getElementById('download-section');
+    const downloadSection = document.getElementById('section-downloads');
     if (downloadSection) {
         if (show) {
             downloadSection.classList.remove('hidden');
