@@ -70,7 +70,9 @@ app.use('/downloads', express.static(path.join(__dirname, 'downloads')));
 
 // 2. Endpunkt erstellen, der die Dateiliste zurückgibt
 app.get('/api/files', (req, res) => {
-    const downloadPath = path.join(__dirname, 'downloads');
+    //const downloadPath = path.join(__dirname, 'downloads');
+    // Nutze den absoluten Pfad zum downloads-Ordner
+    const downloadPath = path.resolve(__dirname, 'downloads');
     
     // Prüfen, ob Ordner existiert
     if (!fs.existsSync(downloadPath)) {
