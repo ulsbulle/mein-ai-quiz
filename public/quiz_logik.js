@@ -368,6 +368,11 @@ function clearHistory() { localStorage.removeItem('quiz_history'); renderHistory
 	document.getElementById('section-training').classList.toggle('hidden', this.value !== 'TRAINING'); // NEU
 	document.getElementById('section-downloads').classList.toggle('hidden', this.value !== 'DOWNLOADS');
 	
+	// Wenn Downloads gewählt wurde, Liste neu laden
+    if(val === 'DOWNLOADS') {
+        loadDownloadFiles();
+    }
+	
 	// Falls ein Spiel auf dem Home-Canvas läuft, stoppen wenn man den Modus wechselt
 	if(this.value !== 'TRAINING') {
 		gameActive = false;
