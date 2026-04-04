@@ -428,7 +428,7 @@ try {
 		
         // 2. Sonstige Downloads (Hier wird nun der Pfad /downloads/ genutzt)
         if(downloadList2) {
-            downloadList2.innerHTML = files.map(file => `
+            downloadList2.innerHTML = sonstigeDateien.map(file => `
                 <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors group">
                     <span class="text-slate-700 font-medium truncate">${file}</span>
                     <a href="/downloads/${file}" download 
