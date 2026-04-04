@@ -418,7 +418,7 @@ try {
         const lernDateien = files.filter(f => f.toLowerCase().endsWith('.pdf') || f.toLowerCase().endsWith('.csv'));
         
         // Liste 2: Alles andere (z.B. .html, .zip, .exe)
-        const sonstigeDateien = files.filter(f => !f.toLowerCase().endsWith('.pdf') && !f.toLowerCase().endsWith('.csv'));
+        const sonstigeDateien = files;
 
         // 1. Lernmaterialien füllen (nur PDFs und CSVs)
         if(downloadList) {
