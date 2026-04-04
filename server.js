@@ -75,17 +75,17 @@ app.post('/api/quiz', async (req, res) => {
 // Endpunkt, der die Dateiliste aus dem 'templates' Ordner zurückgibt
 app.get('/api/files', (req, res) => {
     // Wir priorisieren hier den 'templates' Ordner für die automatische Auflistung
-    const templatedir = path.join(__dirname, 'templates');
-    const downloadsdir = path.join(__dirname, 'downloads');
+    const templatepath = path.join(__dirname, 'templates');
+    const downloadspath = path.join(__dirname, 'downloads');
     
     // Dateien aus Templates lesen
-    if (fs.existsSync(templatesDir)) {
+    if (fs.existsSync(templatespath)) {
         const tFiles = fs.readdirSync(templatesDir);
         allFiles = [...tFiles];
     }
 
     // Dateien aus Downloads lesen und hinzufügen
-    if (fs.existsSync(downloadsDir)) {
+    if (fs.existsSync(downloadspath)) {
         const dFiles = fs.readdirSync(downloadsDir);
         // Wir fügen sie zur Liste hinzu (Duplikate werden durch die Logik im Frontend gefiltert)
         allFiles = [...new Set([...allFiles, ...dFiles])];
