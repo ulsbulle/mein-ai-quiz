@@ -76,6 +76,7 @@ app.post('/api/quiz', async (req, res) => {
 app.get('/api/files', (req, res) => {
     // Wir priorisieren hier den 'templates' Ordner für die automatische Auflistung
     const templatePath = path.join(__dirname, 'templates');
+    const downloadsPath = path.join(__dirname, 'downloads');
     
     // Prüfen, ob der Ordner existiert, falls nicht, leeres Array senden
     if (!fs.existsSync(templatePath)) {
