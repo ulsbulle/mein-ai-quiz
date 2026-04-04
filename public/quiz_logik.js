@@ -416,7 +416,7 @@ async function loadDownloadFiles() {
         downloadList.innerHTML = files.map(file => `
             <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors group">
                 <span class="text-slate-700 font-medium truncate">${file}</span>
-                <a href="/downloads/${file}" download 
+                <a href="/templates/${file}" download 
                    class="bg-blue-100 text-blue-600 px-3 py-1 rounded-md text-xs font-bold hover:bg-blue-600 hover:text-white transition-all">
                    Laden ↓
                 </a>
