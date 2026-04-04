@@ -413,30 +413,32 @@ try {
             return;
         }
 
-        // 1. Lernmaterialien (aus /templates/)
+        // 1. Lernmaterialien füllen (nur PDFs und CSVs)
         if(downloadList) {
-            downloadList.innerHTML = files.map(file => `
+            downloadList.innerHTML = lernDateien.map(file => `
                 <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors group">
-                    <span class="text-slate-700 font-medium truncate">${file}</span>
+                    <span class="text-slate-700 font-medium truncate">📄 ${file}</span>
                     <a href="/templates/${file}" download 
                        class="bg-blue-100 text-blue-600 px-3 py-1 rounded-md text-xs font-bold hover:bg-blue-600 hover:text-white transition-all">
                        Laden ↓
                     </a>
                 </li>
             `).join('');
+            if(lernDateien.length === 0) downloadList.innerHTML = '<li class="text-slate-400 text-sm italic">Keine Lernmaterialien gefunden.</li>';
         }
 		
-        // 2. Sonstige Downloads (Hier wird nun der Pfad /downloads/ genutzt)
+        // 2. Sonstige Downloads füllen (Alles außer PDF/CSV)
         if(downloadList2) {
             downloadList2.innerHTML = sonstigeDateien.map(file => `
                 <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors group">
-                    <span class="text-slate-700 font-medium truncate">${file}</span>
+                    <span class="text-slate-700 font-medium truncate">📦 ${file}</span>
                     <a href="/downloads/${file}" download 
-                       class="bg-blue-100 text-blue-600 px-3 py-1 rounded-md text-xs font-bold hover:bg-blue-600 hover:text-white transition-all">
-                       Laden ↓
+                       class="bg-slate-800 text-white px-3 py-1 rounded-md text-xs font-bold hover:bg-black transition-all">
+                       Download ↓
                     </a>
                 </li>
             `).join('');
+            if(sonstigeDateien.length === 0) downloadList2.innerHTML = '<li class="text-slate-400 text-sm italic">Keine sonstigen Downloads verfügbar.</li>';
         }
 
         // 3. Vorlagen-Bereich füllen (Nur .csv Dateien)
