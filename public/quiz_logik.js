@@ -413,6 +413,10 @@ try {
             return;
         }
 
+		// --- DEFINITIONEN ---
+        const lernDateien = files.filter(f => f.toLowerCase().endsWith('.pdf') || f.toLowerCase().endsWith('.csv'));
+        const sonstigeDateien = files.filter(f => !f.toLowerCase().endsWith('.pdf') && !f.toLowerCase().endsWith('.csv'));
+
         // 1. Lernmaterialien füllen (nur PDFs und CSVs)
         if(downloadList) {
             downloadList.innerHTML = lernDateien.map(file => `
@@ -457,6 +461,8 @@ try {
         if(downloadList) downloadList.innerHTML = '<li class="text-red-400 text-sm">Fehler beim Laden der Liste.</li>';
     }
 }
+
+
 
 // Initialisierung beim Laden
 window.onload = () => {
