@@ -75,23 +75,24 @@ app.post('/api/quiz', async (req, res) => {
 // Endpunkt, der die Dateiliste aus dem 'templates' Ordner zurückgibt
 app.get('/api/files', (req, res) => {
     // Wir priorisieren hier den 'templates' Ordner für die automatische Auflistung
-    const templatepath = path.join(__dirname, 'templates');
-    const downloadspath = path.join(__dirname, 'downloads');
+    const templatePath = path.join(__dirname, 'templates');
     
-    // Dateien aus Templates lesen
-    if (fs.existsSync(templatespath)) {
-        const tFiles = fs.readdirSync(templatesDir);
-        allFiles = [...tFiles];
+    // Prüfen, ob der Ordner existiert, falls nicht, leeres Array senden
+    if (!fs.existsSync(templatePath)) {
+        console.warn("Ordner 'templates' nicht gefunden.");
+        return res.json([]); 
     }
 
-    // Dateien aus Downloads lesen und hinzufügen
-    if (fs.existsSync(downloadspath)) {
-        const dFiles = fs.readdirSync(downloadsDir);
-        // Wir fügen sie zur Liste hinzu (Duplikate werden durch die Logik im Frontend gefiltert)
-        allFiles = [...new Set([...allFiles, ...dFiles])];
-    }
-
-    res.json(allFiles);
+    fs.readdir(templatePath, (err, files) => {
+        if (err) {
+            console.error("Fehler beim Lesen des Ordners:", err);
+            return res.status(500).json({ error: "Fehler beim Lesen der Dateien" });
+        }
+        
+        // Filtert versteckte Dateien (wie .DS_Store) heraus
+        const fileList = files.filter(file => !file.startsWith('.'));
+        res.json(fileList);
+    });
 });
 
 // Server Start
