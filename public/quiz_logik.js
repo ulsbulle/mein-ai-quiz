@@ -456,7 +456,7 @@ try {
         console.error("Fehler beim Laden der Dateien:", error);
         if(downloadList) downloadList.innerHTML = '<li class="text-red-400 text-sm">Fehler beim Laden der Liste.</li>';
     }
-}}
+}
 }
 
 
