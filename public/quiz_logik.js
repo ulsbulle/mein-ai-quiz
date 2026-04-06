@@ -398,63 +398,51 @@ function handleDragLeaveCSV(e) {
 
 /** --- DATEN IMPORT / EXPORT / DOWNLOADS --- **/
 async function loadDownloadFiles() {
-    const downloadList = document.getElementById('file-list'); 		// Bereich Lernmaterialien
-	const downloadList2 = document.getElementById('file2-list');	// Bereich Sonstiges
-	const templateList = document.getElementById('template-list');	// Vorlagen-Bereich (Vorlagen vom Server)
-	
-try {
-		// 1. Templates laden (für Lernmaterialien & Vorlagen-Modus)
-        const response = await fetch('/api/files');
-        const files = await response.json();
-		
-		// 2. Downloads laden (für Sonstige Downloads)
-		const resDownloads = await fetch('/api/files/downloads');
-        const downloads = await resDownloads.json();
-
-		try {
-        // Daten von beiden Endpunkten abrufen
+    const downloadList = document.getElementById('file-list');
+    const downloadList2 = document.getElementById('file2-list');
+    const templateList = document.getElementById('template-list');
+    
+    try {
+        // Abruf der beiden getrennten Endpunkte
         const [resT, resD] = await Promise.all([
             fetch('/api/files/templates'),
             fetch('/api/files/downloads')
         ]);
         
+        if (!resT.ok || !resD.ok) throw new Error("Fehler beim Laden der Dateien");
+
         const templates = await resT.json();
         const downloads = await resD.json();
 
-        // --- 1. VERFÜGBARE LERNMATERIALIEN (aus /templates) ---
+        // 1. Lernmaterialien (Templates)
         if (downloadList) {
-            // Zeige alle Dateien aus dem templates-Ordner (CSVs und PDFs)
             downloadList.innerHTML = templates.length > 0 ? templates.map(file => `
-                <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors">
-                    <span class="text-slate-700 font-medium truncate">📄 ${file}</span>
-                    <a href="/templates/${file}" download class="bg-blue-100 text-blue-600 px-3 py-1 rounded-md text-xs font-bold hover:bg-blue-600 hover:text-white transition-all">Laden ↓</a>
-                </li>
-            `).join('') : '<li class="text-slate-400 text-sm italic">Keine Lernmaterialien gefunden.</li>';
+                <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                    <span class="text-slate-700">📄 ${file}</span>
+                    <a href="/templates/${file}" download class="bg-blue-100 text-blue-600 px-3 py-1 rounded-md text-xs font-bold">Laden ↓</a>
+                </li>`).join('') : '<li class="text-slate-400 text-sm italic">Keine Dateien gefunden.</li>';
         }
 
-        // --- 2. VORLAGEN-BUTTONS (nur .csv aus /templates) ---
+        // 2. Vorlagen-Buttons (nur CSV)
         if (templateList) {
             const csvFiles = templates.filter(f => f.toLowerCase().endsWith('.csv'));
             templateList.innerHTML = csvFiles.length > 0 ? csvFiles.map(file => `
-                <button onclick="loadTemplate('/templates/${file}')" class="w-full p-4 border-2 rounded-xl bg-white hover:border-blue-500 hover:bg-blue-50 text-left font-bold transition-all flex justify-between items-center group">
+                <button onclick="loadTemplate('/templates/${file}')" class="w-full p-4 border-2 rounded-xl bg-white hover:border-blue-500 text-left font-bold transition-all flex justify-between items-center">
                     <span>📊 ${file.replace('.csv', '')}</span>
-                    <span class="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">Starten →</span>
-                </button>
-            `).join('') : '<p class="text-slate-400 text-center">Keine CSV-Vorlagen im Ordner /templates.</p>';
+                    <span class="text-blue-500">Starten →</span>
+                </button>`).join('') : '<p class="text-slate-400 text-center">Keine CSV-Vorlagen gefunden.</p>';
         }
 
-        // --- 3. SONSTIGE DOWNLOADS (aus /downloads) ---
+        // 3. Sonstige Downloads
         if (downloadList2) {
             downloadList2.innerHTML = downloads.length > 0 ? downloads.map(file => `
-                <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <span class="text-slate-700 font-medium truncate">📦 ${file}</span>
-                    <a href="/downloads/${file}" download class="bg-slate-800 text-white px-3 py-1 rounded-md text-xs font-bold hover:bg-black transition-all">Download ↓</a>
-                </li>
-            `).join('') : '<li class="text-slate-400 text-sm italic">Keine sonstigen Dateien gefunden.</li>';
+                <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                    <span class="text-slate-700">📦 ${file}</span>
+                    <a href="/downloads/${file}" download class="bg-slate-800 text-white px-3 py-1 rounded-md text-xs font-bold">Download ↓</a>
+                </li>`).join('') : '<li class="text-slate-400 text-sm italic">Keine Dateien gefunden.</li>';
         }
-
     } catch (error) {
-        console.error("Fehler beim Laden der Listen:", error);
+        console.error("Fehler im Frontend:", error);
     }
 }
 			
