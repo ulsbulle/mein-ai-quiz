@@ -70,35 +70,32 @@ app.post('/api/quiz', async (req, res) => {
     }
 });
 
-// Hilfsfunktion, um nur Dateien aus einem Ordner zu lesen
-const getFilesOnly = (dirPath) => {
+// Hilfsfunktion korrekt benennen und process.cwd() nutzen
+const getFilesFromDir = (folderName) => {
+    const dirPath = path.join(process.cwd(), folderName); // process.cwd() ist sicherer auf Vercel
     if (!fs.existsSync(dirPath)) return [];
-    return fs.readdirSync(dirPath).filter(file => {
-        const filePath = path.join(dirPath, file);
-        return fs.statSync(filePath).isFile() && !file.startsWith('.');
-    });
+    try {
+        return fs.readdirSync(dirPath).filter(file => {
+            const filePath = path.join(dirPath, file);
+            return fs.statSync(filePath).isFile() && !file.startsWith('.');
+        });
+    } catch (err) {
+        return [];
+    }
 };
 
 /** --- DATEI-SYSTEM ENDPUNKTE --- **/
 
 // Endpunkt für den 'templates' Ordner (Lernmaterialien)
 app.get('/api/files/templates', (req, res) => {
-    try {
-        const files = getFilesFromDir('templates');
-        res.json(files);
-    } catch (err) {
-        res.status(500).json({ error: "Fehler beim Lesen der Lernmaterialien" });
-    }
+    const files = getFilesFromDir('templates'); // Nutzt jetzt den richtigen Funktionsnamen
+    res.json(files);
 });
 
 // Endpunkt für den 'downloads' Ordner (Sonstige Downloads)
 app.get('/api/files/downloads', (req, res) => {
-    try {
-        const files = getFilesFromDir('downloads');
-        res.json(files);
-    } catch (err) {
-        res.status(500).json({ error: "Fehler beim Lesen der Downloads" });
-    }
+    const files = getFilesFromDir('downloads'); // Nutzt jetzt den richtigen Funktionsnamen
+    res.json(files);
 });
 
 /** --- SERVER START (Nur für lokale Ausführung / Railway / Render) --- **/
