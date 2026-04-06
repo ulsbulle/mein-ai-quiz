@@ -87,32 +87,23 @@ const getFilesFromDir = (folderName) => {
 };
 
 /** --- DATEI-SYSTEM ENDPUNKTE --- **/
-app.get('/api/files/templates', (req, res) => {
-    try {
-        const files = getFilesFromDir('templates');
-        res.json(files);
-    } catch (err) {
-        res.status(500).json({ error: "Fehler templates" });
-    }
+	app.get('/api/files/templates', (req, res) => {
+    const files = getFilesOnly('templates');
+    res.json(files);
 });
 
-app.get('/api/files/downloads', (req, res) => {
-    try {
-        const files = getFilesFromDir('downloads');
-        res.json(files);
-    } catch (err) {
-        res.status(500).json({ error: "Fehler downloads" });
-    }
+// Endpunkt für 'downloads' (Sonstige Dateien)
+	app.get('/api/files/downloads', (req, res) => {
+    const files = getFilesOnly('downloads');
+    res.json(files);
 });
 
-/** --- SERVER START (Nur für lokale Ausführung / Railway / Render) --- **/
-// Auf Vercel wird dieser Teil ignoriert, da dort "export default app" wichtig ist
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log(`🚀 Server aktiv auf Port ${PORT}`);
-        console.log(`📂 Vorlagen: /templates | 📂 Downloads: /downloads`);
+/** --- EXPORT FÜR VERCEL --- **/
+// Lokal starten, falls nicht auf Vercel
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`Server läuft lokal auf http://localhost:${PORT}`);
     });
 }
 
-// Export für Vercel Serverless Functions
 export default app;
