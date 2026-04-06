@@ -70,41 +70,35 @@ app.post('/api/quiz', async (req, res) => {
     }
 });
 
+// Hilfsfunktion, um nur Dateien aus einem Ordner zu lesen
+const getFilesOnly = (dirPath) => {
+    if (!fs.existsSync(dirPath)) return [];
+    return fs.readdirSync(dirPath).filter(file => {
+        const filePath = path.join(dirPath, file);
+        return fs.statSync(filePath).isFile() && !file.startsWith('.');
+    });
+};
+
 /** --- DATEI-SYSTEM ENDPUNKTE --- **/
 
-// 1. Endpunkt, der die Dateiliste aus dem 'templates' Ordner zurückgibt
-app.get('/api/files', (req, res) => {
-    // Wir priorisieren hier den 'templates' Ordner für die automatische Auflistung
-    const templatePath = path.join(__dirname, 'templates');
-    
-    // Prüfen, ob der Ordner existiert, falls nicht, leeres Array senden
-    if (!fs.existsSync(templatePath)) {
-        console.warn("Ordner 'templates' nicht gefunden.");
-        return res.json([]); 
+// Endpunkt für den 'templates' Ordner (Lernmaterialien)
+app.get('/api/files/templates', (req, res) => {
+    try {
+        const files = getFilesFromDir('templates');
+        res.json(files);
+    } catch (err) {
+        res.status(500).json({ error: "Fehler beim Lesen der Lernmaterialien" });
     }
-
-    fs.readdir(templatePath, (err, files) => {
-        if (err) {
-            console.error("Fehler beim Lesen des Ordners:", err);
-            return res.status(500).json({ error: "Fehler beim Lesen der Dateien" });
-        }
-        
-        // Filtert versteckte Dateien (wie .DS_Store) heraus
-        const fileList = files.filter(file => !file.startsWith('.'));
-        res.json(fileList);
-    });
 });
 
-// 2. Endpunkt für Sonstige Downloads (Inhalt aus /downloads)
+// Endpunkt für den 'downloads' Ordner (Sonstige Downloads)
 app.get('/api/files/downloads', (req, res) => {
-    const dirPath = path.join(__dirname, 'downloads');
-    
-    if (!fs.existsSync(dirPath)) return res.json([]);
-
-    fs.readdir(dirPath, (err, files) => {
-        if (err) return res.status(500).json({ error: "Fehler beim Lesen der Downloads" });
-        res.json(files.filter(file => !file.startsWith('.')));
-    });
+    try {
+        const files = getFilesFromDir('downloads');
+        res.json(files);
+    } catch (err) {
+        res.status(500).json({ error: "Fehler beim Lesen der Downloads" });
+    }
 });
 
 // Server Start
