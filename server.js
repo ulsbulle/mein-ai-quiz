@@ -14,6 +14,8 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 // 1. Ordner als statisch markieren
 // Dies ermöglicht den Zugriff auf Dateien via http://.../templates/name.csv
 // Es wird sowohl im 'downloads' als auch im 'templates' Ordner gesucht
