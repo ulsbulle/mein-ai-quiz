@@ -396,76 +396,55 @@ function handleDragLeaveCSV(e) {
     e.preventDefault(); 
 }
 
-/** --- DATEN IMPORT / EXPORT / DOWNLOADS --- **/
+//Downloadbereich Offline
 async function loadDownloadFiles() {
-    const downloadList = document.getElementById('file-list'); 		// Bereich Lernmaterialien
-	const downloadList2 = document.getElementById('file2-list');	// Bereich Sonstiges
-	const templateList = document.getElementById('template-list');	// Vorlagen-Bereich (Vorlagen vom Server)
+    const downloadList = document.getElementById('file-list');
+	const templateList = document.getElementById('template-list');
 	
-try {
-		// 1. Templates laden (für Lernmaterialien & Vorlagen-Modus)
+    try {
         const response = await fetch('/api/files');
         const files = await response.json();
-		
-		// 2. Downloads laden (für Sonstige Downloads)
-		const resDownloads = await fetch('/api/files/downloads');
-        const downloads = await resDownloads.json();
 
-		// --- Lernmaterialien & Vorlagen füllen (.csv & .pdf aus /templates) ---       
+		// Falls keine Dateien da sind oder die API leer antwortet
 		if (!files || files.length === 0) {
-			// Liste für den Download-Tab
-			downloadList.innerHTML = templates.map(file => `
-                <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors group">
-                    <span class="text-slate-700 font-medium truncate">📄 ${file}</span>
-                    <a href="/templates/${file}" download 
-                       class="bg-blue-100 text-blue-600 px-3 py-1 rounded-md text-xs font-bold hover:bg-blue-600 hover:text-white transition-all">
-                       Laden ↓
-                    </a>
-                </li>
-            `).join('');
-
-// Buttons für den Vorlagen-Tab (Nur CSVs)
-            if (templateList) {
-                const csvFiles = templates.filter(f => f.toLowerCase().endsWith('.csv'));
-                templateList.innerHTML = csvFiles.map(file => `
-                    <button onclick="loadTemplate('/templates/${file}')" class="w-full p-4 border-2 rounded-xl bg-white hover:border-blue-500 hover:bg-blue-50 text-left font-bold transition-all flex justify-between items-center group">
-                        <span>📊 ${file.replace('.csv', '')}</span>
-                        <span class="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">Starten →</span>
-                    </button>
-                `).join('');
-            }
-        } else {
-            downloadList.innerHTML = '<li class="text-slate-400 text-sm italic">Keine Lernmaterialien gefunden.</li>';
+            if(downloadList) downloadList.innerHTML = '<li class="text-slate-400 text-sm">Keine Dateien verfügbar.</li>';
+            if(templateList) templateList.innerHTML = '<p class="text-slate-400 text-sm italic">Keine Vorlagen gefunden.</p>';
+            return;
         }
 
-        // --- Sonstige Downloads füllen (Alles aus /downloads) ---
-        if (downloadList2) {
-            if (downloads && downloads.length > 0) {
-                downloadList2.innerHTML = downloads.map(file => `
-                    <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors group">
-                        <span class="text-slate-700 font-medium truncate">📦 ${file}</span>
-                        <a href="/downloads/${file}" download 
-                           class="bg-slate-800 text-white px-3 py-1 rounded-md text-xs font-bold hover:bg-black transition-all">
-                           Download ↓
-                        </a>
-                    </li>
-                `).join('');
-            } else {
-                downloadList2.innerHTML = '<li class="text-slate-400 text-sm italic p-2">Keine sonstigen Dateien gefunden.</li>';
-            }
-        }
+		// 1. Download-Bereich füllen (Alle Dateien)
+        downloadList.innerHTML = files.map(file => `
+            <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors group">
+                <span class="text-slate-700 font-medium truncate">${file}</span>
+                <a href="/downloads/${file}" download 
+                   class="bg-blue-100 text-blue-600 px-3 py-1 rounded-md text-xs font-bold hover:bg-blue-600 hover:text-white transition-all">
+                   Laden ↓
+                </a>
+            </li>
+        `).join('');
+
+        // 2. Vorlagen-Bereich füllen (Nur .csv Dateien)
+        const csvFiles = files.filter(f => f.endsWith('.csv'));
+        templateList.innerHTML = csvFiles.map(file => `
+            <button onclick="loadTemplate('/templates/${file}')" class="w-full p-4 border-2 rounded-xl bg-white hover:border-blue-500 hover:bg-blue-50 text-left font-bold transition-all flex justify-between items-center group">
+                <span>📄 ${file.replace('.csv', '')}</span>
+                <span class="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">Starten →</span>
+            </button>
+        `).join('');
 
     } catch (error) {
         console.error("Fehler beim Laden der Dateien:", error);
+        if(downloadList) downloadList.innerHTML = '<li class="text-red-400 text-sm">Fehler beim Laden der Liste.</li>';
     }
-}			
-			
+}
+
+
 
 // Initialisierung beim Laden
 window.onload = () => {
 	// Setzt das Dropdown beim Laden explizit auf PDF
 	const modusSelect = document.getElementById('Modus');
-	if(modusSelect) modusSelect.value = 'PDF';
+	modusSelect.value = 'PDF';
 	
 	//Downloadbereich
 	loadDownloadFiles(); // Einfach direkt hier aufrufen
