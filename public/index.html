@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Master Pro 3.1.3 - ZOLL Edition</title>
+    <title>AI Quiz Master Pro 3.1.4 - ZOLL Edition</title>
     <link rel="icon" href="https://fav.farm/🧠" />
 	<link rel="stylesheet" href="style.css">
 
@@ -22,7 +22,7 @@
 		
 	<!--Überschrift-->
         <div class="bg-slate-50 text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">🧠 AI Quiz Master 3.1.3 🧠 </h1>
+            <h1 class="text-4xl font-extrabold text-blue-600 mb-2 pb-2 border-b border-slate-300">🧠 AI Quiz Master 3.1.4 🧠 </h1>
             <p class="text-slate-500 italic font-bold">Lernen mit System & Spielspaß ©ZOLL-Rentner</p>
         </div>
 
@@ -174,9 +174,20 @@
 		<!--Layout für den Quizbereich-->
         <div id="quiz-container" class="hidden bg-white shadow-2xl rounded-3xl p-8 border border-slate-200">
             <div id="quiz-content">
-                <div class="w-full bg-slate-100 rounded-full h-2 mb-6"><div id="progress-bar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div></div>
+                <div class="w-full bg-slate-100 rounded-full h-2 mb-6">
+					<div id="progress-bar" class="bg-blue-600 h-2 rounded-full" style="width: 0%">
+					</div>
+				</div>
                 <span id="q-count" class="text-[10px] font-bold text-blue-500 uppercase tracking-widest"></span>
-                <h2 id="question-text" class="text-xl font-bold text-slate-800 my-6"></h2>
+                <div class="flex gap-2">
+					<button onclick="exportCSV()" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded font-bold uppercase transition-all">
+						📥 CSV Export
+					</button>
+					<button onclick="if(confirm('Quiz wirklich abbrechen?')) goToHome()" class="text-[10px] bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded font-bold uppercase transition-all">
+						🏠 Abbruch
+					</button>
+				</div>
+				<h2 id="question-text" class="text-xl font-bold text-slate-800 my-6"></h2>
                 <div id="options" class="space-y-3"></div>
                 <div id="feedback-area" class="hidden mt-8 p-6 rounded-2xl border-2 animate-slideIn text-center">
                     <p id="feedback-text" class="text-lg font-bold mb-4"></p>
