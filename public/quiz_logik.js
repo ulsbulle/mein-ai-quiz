@@ -296,7 +296,7 @@ function goToHome() {
     document.getElementById('file-name').innerText = "PDF WÄHLEN / DROP";
     document.getElementById('pdf-file').value = "";
     document.getElementById('csv-import').value = "";
-	document.getElementById('section-downloads').classList.remove('hidden');
+	document.getElementById('section-downloads').classList.add('hidden');
 }
 
 //Downlaod ausblenden
