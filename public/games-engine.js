@@ -85,9 +85,6 @@ const gameState = {
         }
         this.gameResult = null;
 		
-		// Schwierigkeitsgrad und Ziel-Punktzahl speichern
-        localStorage.setItem("gameDifficulty", difficulty);
-        localStorage.setItem("gameMaxScore", maxScore);
     }
 };
 
@@ -96,6 +93,10 @@ function setupGame(type, canvasId) {
 	gameActive = true;
 	gamePoints = 0;
 	gameState.gameResult = null; // "win", "lose" oder null
+	
+	// Schwierigkeitsgrad und Ziel-Punktzahl speichern
+    localStorage.setItem("gameDifficulty", difficulty);
+    localStorage.setItem("gameMaxScore", maxScore);
 
 	// UI-Wechsel: Auswahl verstecken, Spielbereich zeigen
 	if (canvasId === "home-canvas") {
