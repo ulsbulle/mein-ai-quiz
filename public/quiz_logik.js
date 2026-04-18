@@ -162,27 +162,15 @@ function showQuestion() {
 			}
 			area.classList.remove("hidden");
 			
-				// --- FOKUS-LOGIK ---
-				// Wir setzen den Fokus auf den "Weiter"-Button, damit Enter direkt funktioniert
-				setTimeout(() => {
-					nextBtn.focus();
-				}, 50);
-			
-				nextBtn.onclick = () => {
-					currentIndex++;
-					showQuestion();
-				};
-				
-				// --- GENAUE POSITION FÜR DEN FOKUS ---
-				// Der Fokus wird gesetzt, sobald das UI-Element "area" sichtbar ist.
-				setTimeout(() => {
-					nextBtn.focus();
-				}, 10);
-			
-			document.getElementById("next-q-btn").onclick = () => {
+			// --- FIX: Fokus auf Weiter-Button ---
+			nextBtn.onclick = () => {
 				currentIndex++;
 				showQuestion();
 			};
+
+			setTimeout(() => {
+				nextBtn.focus();
+			}, 50);
 		};
 		optDiv.appendChild(b);
 	});
