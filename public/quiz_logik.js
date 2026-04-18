@@ -151,22 +151,22 @@ function showQuestion() {
 			
 			if (isCorrect) {
 				score++;
-				playSound("correct");
+				window.gamePoints = score; // Punktzahl an Engine senden
+				if (typeof playSound === 'function') playSound("correct");
 				b.classList.add("border-green-500", "bg-green-50");
-				txt.innerHTML = "✨ Richtig!";
-				txt.className = "text-green-600 font-bold";
+				feedbackText.innerHTML = "✨ Richtig!";
+				feedbackText.className = "text-green-600 font-bold text-center";
 			} else {
 				userMistakes.push({ q: q.question, g: opt, c: q.options[q.answer] });
-				playSound("wrong");
+				if (typeof playSound === 'function') playSound("wrong");
 				b.classList.add("border-red-500", "bg-red-50");
-				if (q.answer !== -1)
-					document.querySelectorAll(".option-btn")[q.answer].classList.add("border-green-400", "bg-green-50");
-				txt.innerHTML = `
-					<span class="text-red-600 font-bold">❌ Falsch.</span><br> 
-					<span class="text-green-600 font-bold">Richtig ist: </span>
-					<span class="text-black font-bold underline">${q.options[q.answer]}</span>
-				`;
-				txt.className = "text-red-600 font-bold";
+				
+				// Die richtige Lösung grün markieren
+				const buttons = document.querySelectorAll(".option-btn");
+				if(buttons[q.answer]) buttons[q.answer].classList.add("border-green-400", "bg-green-50");
+				
+				feedbackText.innerHTML = `❌ Falsch. Richtig ist: <span class="underline">${q.options[q.answer]}</span>`;
+				feedbackText.className = "text-red-600 font-bold text-center";
 			}
 			
 			// Feedback einblenden
