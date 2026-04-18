@@ -162,8 +162,12 @@ function showQuestion() {
 			}
 			area.classList.remove("hidden");
 			
-			// --- NEU: Fokus auf den "Weiter"-Button setzen ---
-				const nextBtn = document.getElementById("next-q-btn");
+				// --- FOKUS-LOGIK ---
+				// Wir setzen den Fokus auf den "Weiter"-Button, damit Enter direkt funktioniert
+				setTimeout(() => {
+					nextBtn.focus();
+				}, 50);
+			
 				nextBtn.onclick = () => {
 					currentIndex++;
 					showQuestion();
