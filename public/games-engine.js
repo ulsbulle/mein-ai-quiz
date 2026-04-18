@@ -1,14 +1,6 @@
 // Spielengine und Hauptschleife
 // ------------------------------
 
-// --- Globale Variablen Initialisierung ---
-let gamePoints = 0;
-let maxScore = 10; // Standardwert, falls Input fehlt
-let difficulty = 1; // Standardwert (Normal)
-let gameActive = false;
-let gameAnimationId = null;
-let pointerStart = { x: null, y: null }; // Falls von extern genutzt
-
 
 // Zustand des laufenden Spiels
 const gameState = {
