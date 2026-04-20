@@ -42,7 +42,7 @@ app.post('/api/quiz', async (req, res) => {
 		const sizeInMB = (sanitizedPdf.length * 0.75 / 1024 / 1024).toFixed(2);
 		console.log(`DEBUG: PDF-Größe erkannt: ~${sizeInMB} MB`);
 
-		const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+		const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5:generateContent?key=${apiKey}`;
 
 		console.log("DEBUG: Sende Daten an Gemini API...");
 		console.time("Gemini-Antwortzeit");
