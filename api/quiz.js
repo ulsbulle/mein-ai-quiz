@@ -27,7 +27,10 @@ export default async function handler(req, res) {
 						],
 					},
 				],
-				generationConfig: {},
+				generationConfig: {
+					// Tipp: "response_mime_type" zwingt das Modell zu validem JSON
+					response_mime_type: "application/json"	
+				},
 			}),
 		});
 
